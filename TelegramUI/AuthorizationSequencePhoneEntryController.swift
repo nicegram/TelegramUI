@@ -162,7 +162,13 @@ final class AuthorizationSequencePhoneEntryController: ViewController {
             } else {
                 // App Review Reasons, thanks Apple <3
                 if (number == "0000000000"){
-                    self.sharedContext.beginNewAuth(testingEnvironment: true)
+                    let alert: String
+                    if (self.isTestingEnvironment) {
+                        alert = "Production Mode Enabled!"
+                    } else {
+                        alert = "Test Mode Enabled!"
+                    }
+                    self.present(standardTextAlertController(theme: AlertControllerTheme(presentationTheme: self.theme), title: nil, text: alert, actions: [TextAlertAction(type: .defaultAction, title: self.strings.Common_OK, action: { self.sharedContext.beginNewAuth(testingEnvironment: !self.isTestingEnvironment) })]), in: .window(.root))
                     return
                 } else {
                     let logInNumber: String

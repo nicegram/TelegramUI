@@ -3119,6 +3119,8 @@ public final class ChatController: TelegramController, KeyShortcutResponder, Gal
                                 }
                             }
                             
+                            strongSelf.chatDisplayNode
+                            
                             if globalRemainingUnreadChatCount > 0 {
                                 strongSelf.navigationItem.badge = "\(globalRemainingUnreadChatCount)"
                             } else {

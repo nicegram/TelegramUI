@@ -27,6 +27,7 @@ private enum ApplicationSpecificSharedDataKeyValues: Int32 {
     case watchPresetSettings = 13
     case webSearchSettings = 14
     case contactSynchronizationSettings = 15
+    case niceSettings = 20
 }
 
 public struct ApplicationSpecificSharedDataKeys {
@@ -46,6 +47,8 @@ public struct ApplicationSpecificSharedDataKeys {
     public static let watchPresetSettings = applicationSpecificSharedDataKey(ApplicationSpecificSharedDataKeyValues.watchPresetSettings.rawValue)
     public static let webSearchSettings = applicationSpecificSharedDataKey(ApplicationSpecificSharedDataKeyValues.webSearchSettings.rawValue)
     public static let contactSynchronizationSettings = applicationSpecificPreferencesKey(ApplicationSpecificSharedDataKeyValues.contactSynchronizationSettings.rawValue)
+    public static let niceSettings =
+        applicationSpecificSharedDataKey(ApplicationSpecificSharedDataKeyValues.niceSettings.rawValue)
 }
 
 private enum ApplicationSpecificItemCacheCollectionIdValues: Int8 {

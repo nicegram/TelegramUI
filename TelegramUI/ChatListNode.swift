@@ -29,6 +29,7 @@ public struct ChatListNodePeersFilter: OptionSet {
 
 enum ChatListNodeMode {
     case chatList
+    case nonMutedChatList
     case peers(filter: ChatListNodePeersFilter)
 }
 
@@ -136,7 +137,7 @@ private func mappedInsertEntries(account: Account, nodeInteraction: ChatListNode
         switch entry.entry {
             case let .PeerEntry(index, presentationData, message, combinedReadState, notificationSettings, embeddedState, peer, summaryInfo, editing, hasActiveRevealControls, selected, inputActivities, isAd):
                 switch mode {
-                    case .chatList:
+                    case .chatList, .nonMutedChatList:
                         return ListViewInsertItem(index: entry.index, previousIndex: entry.previousIndex, item: ChatListItem(presentationData: presentationData, account: account, peerGroupId: peerGroupId, index: index, content: .peer(message: message, peer: peer, combinedReadState: combinedReadState, notificationSettings: notificationSettings, summaryInfo: summaryInfo, embeddedState: embeddedState, inputActivities: inputActivities, isAd: isAd, ignoreUnreadBadge: false), editing: editing, hasActiveRevealControls: hasActiveRevealControls, selected: selected, header: nil, enableContextActions: true, interaction: nodeInteraction), directionHint: entry.directionHint)
                     case let .peers(filter):
                         let itemPeer = peer.chatMainPeer
@@ -215,7 +216,7 @@ private func mappedUpdateEntries(account: Account, nodeInteraction: ChatListNode
         switch entry.entry {
             case let .PeerEntry(index, presentationData, message, combinedReadState, notificationSettings, embeddedState, peer, summaryInfo, editing, hasActiveRevealControls, selected, inputActivities, isAd):
                 switch mode {
-                    case .chatList:
+                    case .chatList, .nonMutedChatList:
                         return ListViewUpdateItem(index: entry.index, previousIndex: entry.previousIndex, item: ChatListItem(presentationData: presentationData, account: account, peerGroupId: peerGroupId, index: index, content: .peer(message: message, peer: peer, combinedReadState: combinedReadState, notificationSettings: notificationSettings, summaryInfo: summaryInfo, embeddedState: embeddedState, inputActivities: inputActivities, isAd: isAd, ignoreUnreadBadge: false), editing: editing, hasActiveRevealControls: hasActiveRevealControls, selected: selected, header: nil, enableContextActions: true, interaction: nodeInteraction), directionHint: entry.directionHint)
                     case let .peers(filter):
                         let itemPeer = peer.chatMainPeer
@@ -492,10 +493,12 @@ final class ChatListNode: ListView {
             let (rawEntries, isLoading) = chatListNodeEntriesForView(update.view, state: state, savedMessagesPeer: savedMessagesPeer, mode: mode)
             let entries = rawEntries.filter { entry in
                 switch entry {
-                case let .PeerEntry(_, _, _, _, _, _, peer, _, _, _, _, _, _):
+                case let .PeerEntry(_, _, _, _, notificationSettings, _, peer, _, _, _, _, _, _):
                     switch mode {
                         case .chatList:
                             return true
+                        case .nonMutedChatList:
+                            return !(notificationSettings?.isRemovedFromTotalUnreadCount ?? TelegramPeerNotificationSettings.defaultSettings.isRemovedFromTotalUnreadCount)
                         case let .peers(filter):
                             guard !filter.contains(.excludeSavedMessages) || peer.peerId != currentPeerId else { return false }
                             guard !filter.contains(.excludeSecretChats) || peer.peerId.namespace != Namespaces.Peer.SecretChat else { return false }
@@ -691,6 +694,8 @@ final class ChatListNode: ListView {
         switch mode {
             case .chatList:
                 initialLocation = .initial(count: 50)
+            case .nonMutedChatList:
+                initialLocation = .initial(count: 400)
             case .peers:
                 initialLocation = .initial(count: 200)
         }
@@ -991,6 +996,16 @@ final class ChatListNode: ListView {
                         }
                     }
                     
+                    // TODO: nonMutedChatListView
+                    /*if case .nonMutedChatList = strongSelf.mode {
+                        let entryCount = transition.chatListView.filteredEntries.count
+                        if entryCount >= 1 {
+                            if transition.chatListView.filteredEntries[entryCount - 1].index.pinningIndex != nil {
+                                pinnedOverscroll = true
+                            }
+                        }
+                    }*/
+                    
                     if pinnedOverscroll != (strongSelf.keepTopItemOverscrollBackground != nil) {
                         if pinnedOverscroll {
                             strongSelf.keepTopItemOverscrollBackground = ListViewKeepTopItemOverscrollBackground(color: strongSelf.theme.chatList.pinnedItemBackgroundColor, direction: true)
@@ -1089,8 +1104,16 @@ final class ChatListNode: ListView {
     }
     
     private func setChatListLocation(_ location: ChatListNodeLocation) {
-        self.currentLocation = location
-        self.chatListLocation.set(location)
+        // workaround
+        switch self.mode {
+            case .nonMutedChatList:
+                self.currentLocation = .initial(count: 400)
+                self.chatListLocation.set(location)
+            default:
+                self.currentLocation = location
+                self.chatListLocation.set(location)
+        }
+        
     }
     
     private func relativeUnreadChatListIndex(position: ChatListRelativePosition) -> Signal<ChatListIndex?, NoError> {
@@ -1272,7 +1295,17 @@ final class ChatListNode: ListView {
                 }
                 switch chatListView.filteredEntries[entryCount - i - 1] {
                     case let .PeerEntry(index, _, _, readState, notificationSettings, _, _, _, _, _, _, _, _):
-                        return index
+                         return index
+                        // TODO
+                        /*
+                        switch self.mode {
+                            case .nonMutedChatList:
+                                if !(notificationSettings?.isRemovedFromTotalUnreadCount ?? TelegramPeerNotificationSettings.defaultSettings.isRemovedFromTotalUnreadCount) {
+                                        return index
+                                }
+                            default:
+                                return index
+                        }*/
                     default:
                         break
                 }
