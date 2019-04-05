@@ -82,11 +82,7 @@ class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                 niceSettings = niceSettingsManager.getSettings()
                 if (niceSettings.bigEmojis && niceSettings.transparentEmojisBubble){
                     switch emojis.count {
-                    case 1:
-                        hideBubble = true
-                    case 2:
-                        hideBubble = true
-                    case 3:
+                    case 1, 2, 3:
                         hideBubble = true
                     default:
                         hideBubble = false
