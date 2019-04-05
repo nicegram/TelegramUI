@@ -88,7 +88,7 @@ extension String {
             if let previous = previous, previous.isZeroWidthJoiner && cur.isEmoji {
                 chars.append(previous)
                 chars.append(cur)
-            } else if cur.isEmoji {
+            } else if cur.isEmoji && cur.value != 65039 {
                 chars.append(cur)
             }
             

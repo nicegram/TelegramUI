@@ -72,8 +72,32 @@ class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
         let currentCachedChatMessageText = self.cachedChatMessageText
         
         return { item, layoutConstants, _, _, _ in
-            let contentProperties = ChatMessageBubbleContentProperties(hidesSimpleAuthorHeader: false, headerSpacing: 0.0, hidesBackground: .never, forceFullCorners: false, forceAlignment: .none)
+            var contentProperties = ChatMessageBubbleContentProperties(hidesSimpleAuthorHeader: false, headerSpacing: 0.0, hidesBackground: .never, forceFullCorners: false, forceAlignment: .none)
+            var hideBubble = false
+            var niceSettings = NiceSettings.defaultSettings
             
+            if item.message.text.containsOnlyEmoji {
+                let emojis = item.message.text.emojis
+                let niceSettingsManager = NiceSettingsManager()
+                niceSettings = niceSettingsManager.getSettings()
+                if (niceSettings.bigEmojis && niceSettings.transparentEmojisBubble){
+                    switch emojis.count {
+                    case 1:
+                        hideBubble = true
+                    case 2:
+                        hideBubble = true
+                    case 3:
+                        hideBubble = true
+                    default:
+                        hideBubble = false
+                        break
+                    }
+                    if (hideBubble){
+                        contentProperties = ChatMessageBubbleContentProperties(hidesSimpleAuthorHeader: false, headerSpacing: 0.0, hidesBackground: .always, forceFullCorners: false, forceAlignment: .none)
+                    }
+                }
+            }
+
             return (contentProperties, nil, CGFloat.greatestFiniteMagnitude, { constrainedSize, position in
                 let message = item.message
                 
@@ -196,9 +220,10 @@ class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                 
                 var textFont = item.presentationData.messageFont
                 var forceStatusNewline = false
-                /*if rawText.containsOnlyEmoji {
-                    let emojis = rawText.emojis
-                    switch emojis.count {
+                if rawText.containsOnlyEmoji {
+                    if (niceSettings.bigEmojis){
+                        let emojis = rawText.emojis
+                        switch emojis.count {
                         case 1:
                             textFont = item.presentationData.messageEmojiFont1
                             forceStatusNewline = true
@@ -210,8 +235,9 @@ class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                             forceStatusNewline = true
                         default:
                             break
+                        }
                     }
-                }*/
+                }
                 
                 if let entities = entities {
                     attributedText = stringWithAppliedEntities(rawText, entities: entities, baseColor: incoming ? bubbleTheme.incomingPrimaryTextColor : bubbleTheme.outgoingPrimaryTextColor, linkColor: incoming ? bubbleTheme.incomingLinkTextColor : bubbleTheme.outgoingLinkTextColor, baseFont: textFont, linkFont: textFont, boldFont: item.presentationData.messageBoldFont, italicFont: item.presentationData.messageItalicFont, fixedFont: item.presentationData.messageFixedFont)

@@ -450,6 +450,7 @@ class ChatMessageAnimatedStickerItemNode: ChatMessageItemView {
                     
                     if let item = self.item, self.imageNode.frame.contains(location) {
                         self.animationNode.play()
+                        // TODO: openMessage scheme
                         //let _ = item.controllerInteraction.openMessage(item.message, .default)
                         return
                     }

@@ -16,11 +16,16 @@ private final class NiceFeaturesControllerArguments {
     let togglePinnedMessage: (Bool) -> Void
     let toggleWorkmode: (Bool) -> Void
     let toggleShowContactsTab: (Bool) -> Void
+    let toggleBigEmojis: (Bool) -> Void
+    let toggleTransparentEmojisBubble: (Bool) -> Void
+
     
-    init(togglePinnedMessage:@escaping (Bool) -> Void, toggleWorkmode:@escaping (Bool) -> Void, toggleShowContactsTab:@escaping (Bool) -> Void) {
+    init(togglePinnedMessage:@escaping (Bool) -> Void, toggleWorkmode:@escaping (Bool) -> Void, toggleShowContactsTab:@escaping (Bool) -> Void, toggleBigEmojis:@escaping (Bool) -> Void, toggleTransparentEmojisBubble:@escaping (Bool) -> Void) {
         self.togglePinnedMessage = togglePinnedMessage
         self.toggleWorkmode = toggleWorkmode
         self.toggleShowContactsTab = toggleShowContactsTab
+        self.toggleBigEmojis = toggleBigEmojis
+        self.toggleTransparentEmojisBubble = toggleTransparentEmojisBubble
     }
 }
 
@@ -29,6 +34,7 @@ private enum niceFeaturesControllerSection: Int32 {
     case messageNotifications
     case chatsList
     case tabs
+    case chatScreen
 }
 
 private enum NiceFeaturesControllerEntityId: Equatable, Hashable {
@@ -46,6 +52,11 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
     case tabsHeader(PresentationTheme, String)
     case showContactsTab(PresentationTheme, String, Bool)
     
+    case chatScreenHeader(PresentationTheme, String)
+    case showBigEmojis(PresentationTheme, String, Bool)
+    case transparentEmojisBubble(PresentationTheme, String, Bool)
+    case transparentEmojisBubbleNotice(PresentationTheme, String)
+    
     var section: ItemListSectionId {
         switch self {
         case .messageNotificationsHeader, .pinnedMessageNotification:
@@ -54,6 +65,8 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
             return niceFeaturesControllerSection.chatsList.rawValue
         case .tabsHeader, .showContactsTab:
             return niceFeaturesControllerSection.tabs.rawValue
+        case .chatScreenHeader, .showBigEmojis, .transparentEmojisBubble, .transparentEmojisBubbleNotice:
+            return niceFeaturesControllerSection.chatScreen.rawValue
         }
         
     }
@@ -74,6 +87,14 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
             return .index(5)
         case .showContactsTab:
             return .index(6)
+        case .chatScreenHeader:
+            return .index(7)
+        case .showBigEmojis:
+            return .index(8)
+        case .transparentEmojisBubble:
+            return .index(9)
+        case .transparentEmojisBubbleNotice:
+            return .index(10)
         }
     }
     
@@ -127,6 +148,34 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
             } else {
                 return false
             }
+            
+        case let .chatScreenHeader(lhsTheme, lhsText):
+            if case let .chatScreenHeader(rhsTheme, rhsText) = rhs, lhsTheme === rhsTheme, lhsText == rhsText {
+                return true
+            } else {
+                return false
+            }
+            
+        case let .showBigEmojis(lhsTheme, lhsText, lhsValue):
+            if case let .showBigEmojis(rhsTheme, rhsText, rhsValue) = rhs, lhsTheme === rhsTheme, lhsText == rhsText, lhsValue == rhsValue {
+                return true
+            } else {
+                return false
+            }
+            
+        case let .transparentEmojisBubble(lhsTheme, lhsText, lhsValue):
+            if case let .transparentEmojisBubble(rhsTheme, rhsText, rhsValue) = rhs, lhsTheme === rhsTheme, lhsText == rhsText, lhsValue == rhsValue {
+                return true
+            } else {
+                return false
+            }
+            
+        case let .transparentEmojisBubbleNotice(lhsTheme, lhsText):
+            if case let .transparentEmojisBubbleNotice(rhsTheme, rhsText) = rhs, lhsTheme === rhsTheme, lhsText == rhsText {
+                return true
+            } else {
+                return false
+            }
         }
     }
     
@@ -175,6 +224,34 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
                 return true
             }
         case .showContactsTab:
+            switch rhs {
+            case .messageNotificationsHeader, .pinnedMessageNotification, .chatsListHeader, .workmode, .workmodeNotice, .tabsHeader, .showContactsTab:
+                return false
+            default:
+                return true
+            }
+        case .chatScreenHeader:
+            switch rhs {
+            case .messageNotificationsHeader, .pinnedMessageNotification, .chatsListHeader, .workmode, .workmodeNotice, .tabsHeader, .showContactsTab, .chatScreenHeader:
+                return false
+            default:
+                return true
+            }
+        case .showBigEmojis:
+            switch rhs {
+            case .messageNotificationsHeader, .pinnedMessageNotification, .chatsListHeader, .workmode, .workmodeNotice, .tabsHeader, .showContactsTab, .chatScreenHeader, .showBigEmojis:
+                return false
+            default:
+                return true
+            }
+        case .transparentEmojisBubble:
+            switch rhs {
+            case .messageNotificationsHeader, .pinnedMessageNotification, .chatsListHeader, .workmode, .workmodeNotice, .tabsHeader, .showContactsTab, .chatScreenHeader, .showBigEmojis, .transparentEmojisBubble:
+                return false
+            default:
+                return true
+            }
+        case .transparentEmojisBubbleNotice:
             return false
         }
     }
@@ -201,6 +278,18 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
             return ItemListSwitchItem(theme: theme, title: text, value: value, enabled: true, sectionId: self.section, style: .blocks, updated: { value in
                 arguments.toggleShowContactsTab(value)
             })
+        case let .chatScreenHeader(theme, text):
+            return ItemListSectionHeaderItem(theme: theme, text: text, sectionId: self.section)
+        case let .showBigEmojis(theme, text, value):
+            return ItemListSwitchItem(theme: theme, title: text, value: value, enabled: true, sectionId: self.section, style: .blocks, updated: { value in
+                arguments.toggleBigEmojis(value)
+            })
+        case let .transparentEmojisBubble(theme, text, value):
+            return ItemListSwitchItem(theme: theme, title: text, value: value, enabled: true, sectionId: self.section, style: .blocks, updated: { value in
+                arguments.toggleTransparentEmojisBubble(value)
+            })
+        case let .transparentEmojisBubbleNotice(theme, text):
+            return ItemListTextItem(theme: theme, text: .plain(text), sectionId: self.section)
         }
     }
     
@@ -224,6 +313,10 @@ private func niceFeaturesControllerEntries(niceSettings: NiceSettings, presentat
     entries.append(.workmodeNotice(presentationData.theme, "Switch between \"All\" and \"Non Muted\" chats"))
     entries.append(.tabsHeader(presentationData.theme, "TABS SETTINGS"))
     entries.append(.showContactsTab(presentationData.theme, "Show Contacts Tab", niceSettings.showContactsTab))
+    entries.append(.chatScreenHeader(presentationData.theme, "CHAT SCREEN SETTINGS"))
+    entries.append(.showBigEmojis(presentationData.theme, "Show Big Emojis", niceSettings.bigEmojis))
+    entries.append(.transparentEmojisBubble(presentationData.theme, "Transparent Emojis Bubble", niceSettings.transparentEmojisBubble))
+    entries.append(.transparentEmojisBubbleNotice(presentationData.theme, "Looks like emojis in iMessage. Removes bubble for emoji-only messages."))
     
     return entries
 }
@@ -255,7 +348,26 @@ public func niceFeaturesController(context: AccountContext) -> ViewController {
             settings.showContactsTab = value
             return settings
         }).start()
-    })
+    }, toggleBigEmojis: { value in
+        let _ = updateNiceSettingsInteractively(accountManager: context.sharedContext.accountManager, { settings in
+            var settings = settings
+            settings.bigEmojis = value
+            if (!settings.bigEmojis && settings.transparentEmojisBubble) {
+                settings.transparentEmojisBubble = false
+            }
+            return settings
+        }).start()
+    }, toggleTransparentEmojisBubble: { value in
+        let _ = updateNiceSettingsInteractively(accountManager: context.sharedContext.accountManager, { settings in
+            var settings = settings
+            settings.transparentEmojisBubble = value
+            if (settings.transparentEmojisBubble && !settings.bigEmojis) {
+                settings.bigEmojis = true
+            }
+            return settings
+        }).start()
+    }
+    )
     
     
     let signal = combineLatest(context.sharedContext.presentationData, context.sharedContext.accountManager.sharedData(keys: [ApplicationSpecificSharedDataKeys.niceSettings]), statePromise.get())
