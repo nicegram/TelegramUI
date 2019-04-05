@@ -160,6 +160,7 @@
 		09F85BA721E7DA5F00D73170 /* BlurredImageNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F85BA621E7DA5F00D73170 /* BlurredImageNode.swift */; };
 		09FE756D2153F5F900A3120F /* CallRouteActionSheetItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09FE756C2153F5F900A3120F /* CallRouteActionSheetItem.swift */; };
 		512163C6224E595800796C9A /* NiceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 512163C5224E595800796C9A /* NiceSettings.swift */; };
+		512AC2FA2257977700A2F587 /* NiceSettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 512AC2F92257977700A2F587 /* NiceSettingsManager.swift */; };
 		51C99521224C281200F87678 /* NiceFeaturesListController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C99520224C281200F87678 /* NiceFeaturesListController.swift */; };
 		9F06830921A404AB001D8EDB /* NotificationExceptionControllerNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06830821A404AB001D8EDB /* NotificationExceptionControllerNode.swift */; };
 		9F06830B21A404C4001D8EDB /* NotificationExceptionSettingsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06830A21A404C4001D8EDB /* NotificationExceptionSettingsController.swift */; };
@@ -1325,6 +1326,7 @@
 		09F85BA621E7DA5F00D73170 /* BlurredImageNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlurredImageNode.swift; sourceTree = "<group>"; };
 		09FE756C2153F5F900A3120F /* CallRouteActionSheetItem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CallRouteActionSheetItem.swift; sourceTree = "<group>"; };
 		512163C5224E595800796C9A /* NiceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiceSettings.swift; sourceTree = "<group>"; };
+		512AC2F92257977700A2F587 /* NiceSettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiceSettingsManager.swift; sourceTree = "<group>"; };
 		51C99520224C281200F87678 /* NiceFeaturesListController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiceFeaturesListController.swift; sourceTree = "<group>"; };
 		9F06830821A404AB001D8EDB /* NotificationExceptionControllerNode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotificationExceptionControllerNode.swift; sourceTree = "<group>"; };
 		9F06830A21A404C4001D8EDB /* NotificationExceptionSettingsController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotificationExceptionSettingsController.swift; sourceTree = "<group>"; };
@@ -3569,6 +3571,7 @@
 				0962E67C21BA048D00245FD9 /* WebSearchSettings.swift */,
 				D005808A21CAB8F000CB7CD3 /* VoipDerivedState.swift */,
 				512163C5224E595800796C9A /* NiceSettings.swift */,
+				512AC2F92257977700A2F587 /* NiceSettingsManager.swift */,
 			);
 			name = Settings;
 			sourceTree = "<group>";
@@ -5498,6 +5501,7 @@
 				D01C06B11FBB4643001561AB /* JoinLinkPreviewControllerNode.swift in Sources */,
 				D0EC6D1E1EB9F58800EBF1C3 /* MediaPlayerScrubbingNode.swift in Sources */,
 				D0C0B59B1EE019E5000F4D2C /* ChatSearchNavigationContentNode.swift in Sources */,
+				512AC2FA2257977700A2F587 /* NiceSettingsManager.swift in Sources */,
 				D0EC6D1F1EB9F58800EBF1C3 /* MediaPlayerTimeTextNode.swift in Sources */,
 				D0EC6D201EB9F58800EBF1C3 /* PeerAvatar.swift in Sources */,
 				09F664CC21EB552C00AB7E26 /* WallpaperSearchRecentQueries.swift in Sources */,
