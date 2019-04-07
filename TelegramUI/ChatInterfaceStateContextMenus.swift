@@ -533,6 +533,9 @@ func contextMenuForChatPresentationIntefaceState(chatPresentationInterfaceState:
             actions.append(.sheet(ChatMessageContextMenuSheetAction(color: .accent, title: chatPresentationInterfaceState.strings.Conversation_ContextMenuForward, action: {
                     interfaceInteraction.forwardMessages(selectAll ? messages : [message])
             })))
+            actions.append(.sheet(ChatMessageContextMenuSheetAction(color: .accent, title: "Save to Cloud", action: {
+                interfaceInteraction.cloudMessages(selectAll ? messages : [message])
+            })))
         }
         
         if data.messageActions.options.contains(.report) {

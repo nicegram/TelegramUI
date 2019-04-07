@@ -283,6 +283,13 @@ public class PeerMediaCollectionController: TelegramController {
                 }
             }
         }, forwardMessages: { _ in
+        }, cloudSelectedMessages: { [weak self] in
+            if let strongSelf = self {
+                if let forwardMessageIdsSet = strongSelf.interfaceState.selectionState?.selectedIds {
+                    strongSelf.forwardMessages(forwardMessageIdsSet)
+                }
+            }
+        }, cloudMessages: { _ in
         }, shareSelectedMessages: { [weak self] in
             if let strongSelf = self, let selectedIds = strongSelf.interfaceState.selectionState?.selectedIds, !selectedIds.isEmpty {
                 let _ = (strongSelf.context.account.postbox.transaction { transaction -> [Message] in
