@@ -198,7 +198,6 @@ final class ChatMessageSelectionInputPanelNode: ChatInputPanelNode {
                 ]
             } else {
                 buttons = [
-
                     self.reportButton,
                     self.shareButton,
                     self.cloudButton,
