@@ -2287,6 +2287,20 @@ public final class ChatController: TelegramController, KeyShortcutResponder, Gal
                 let forwardMessageIds = messages.map { $0.id }.sorted()
                 strongSelf.forwardMessages(messageIds: forwardMessageIds)
             }
+        }, cloudSelectedMessages: { [weak self] in
+            if let strongSelf = self {
+                strongSelf.commitPurposefulAction()
+                if let forwardMessageIdsSet = strongSelf.presentationInterfaceState.interfaceState.selectionState?.selectedIds {
+                    let forwardMessageIds = Array(forwardMessageIdsSet).sorted()
+                    strongSelf.forwardMessages(messageIds: forwardMessageIds, cloud: true)
+                }
+            }
+        }, cloudMessages: { [weak self] messages in
+            if let strongSelf = self, !messages.isEmpty {
+                strongSelf.commitPurposefulAction()
+                let forwardMessageIds = messages.map { $0.id }.sorted()
+                strongSelf.forwardMessages(messageIds: forwardMessageIds, cloud: true)
+            }
         }, shareSelectedMessages: { [weak self] in
             if let strongSelf = self, let selectedIds = strongSelf.presentationInterfaceState.interfaceState.selectionState?.selectedIds, !selectedIds.isEmpty {
                 strongSelf.commitPurposefulAction()
@@ -5136,7 +5150,38 @@ public final class ChatController: TelegramController, KeyShortcutResponder, Gal
         }
     }
     
-    private func forwardMessages(messageIds: [MessageId]) {
+    private func forwardMessages(messageIds: [MessageId], cloud: Bool = false) {
+        if (cloud) {
+            let _ = (enqueueMessages(account: self.context.account, peerId: self.context.account.peerId, messages: messageIds.map { id -> EnqueueMessage in
+                return .forward(source: id, grouping: .auto)
+            })
+                |> deliverOnMainQueue).start(next: { messageIds in
+                        let signals: [Signal<Bool, NoError>] = messageIds.compactMap({ id -> Signal<Bool, NoError>? in
+                            guard let id = id else {
+                                return nil
+                            }
+                            return self.context.account.pendingMessageManager.pendingMessageStatus(id)
+                                |> mapToSignal { status -> Signal<Bool, NoError> in
+                                    if status != nil {
+                                        return .never()
+                                    } else {
+                                        return .single(true)
+                                    }
+                                }
+                                |> take(1)
+                        })
+                        if self.shareStatusDisposable == nil {
+                            self.shareStatusDisposable = MetaDisposable()
+                        }
+                        self.shareStatusDisposable?.set((combineLatest(signals)
+                            |> deliverOnMainQueue).start(completed: {
+                                self.present(OverlayStatusController(theme: self.presentationData.theme, strings: self.presentationData.strings, type: .success), in: .window(.root))
+                            }))
+                })
+            self.updateChatPresentationInterfaceState(animated: false, interactive: true, { $0.updatedInterfaceState({ $0.withoutSelectionState() }) })
+            return
+        }
+        
         let controller = PeerSelectionController(context: self.context, filter: .onlyWriteable)
         controller.peerSelected = { [weak self, weak controller] peerId in
             guard let strongSelf = self, let strongController = controller else {

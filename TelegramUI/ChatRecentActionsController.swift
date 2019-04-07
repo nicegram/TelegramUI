@@ -46,6 +46,8 @@ final class ChatRecentActionsController: TelegramController {
         }, deleteMessages: { _ in
         }, forwardSelectedMessages: {
         }, forwardMessages: { _ in
+        }, cloudSelectedMessages: {
+        }, cloudMessages: { _ in
         }, shareSelectedMessages: {
         }, updateTextInputStateAndMode: { _ in
         }, updateInputModeAndDismissedButtonKeyboardMessageId: { _ in
