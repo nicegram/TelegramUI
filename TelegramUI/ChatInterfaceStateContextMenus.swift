@@ -490,7 +490,7 @@ func contextMenuForChatPresentationIntefaceState(chatPresentationInterfaceState:
         }
         
         if let peer = message.peers[message.id.peerId] as? TelegramChannel {
-            if (message.author != nil) && peer.hasPermission(.banMembers) {
+            if (message.author != nil) && (message.author!.id != context.account.peerId) && peer.hasPermission(.banMembers) {
                 let banDisposables = DisposableDict<PeerId>()
                 actions.append(.context(ContextMenuAction(content: .text(title: chatPresentationInterfaceState.strings.Conversation_ContextMenuBan, accessibilityLabel: chatPresentationInterfaceState.strings.Conversation_ContextMenuBan), action: {
                     banDisposables.set((fetchChannelParticipant(account: context.account, peerId: peer.id, participantId: message.author!.id)
