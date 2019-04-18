@@ -113,6 +113,8 @@ func fetchSecureIdLocalImageResource(postbox: Postbox, resource: SecureIdLocalIm
                             data.copyBytes(to: bytes.advanced(by: resourceOffset), from: range)
                         }
                     }
+                default:
+                    break
             }
         }, completed: {
             let image = buffer.with { buffer -> UIImage? in
