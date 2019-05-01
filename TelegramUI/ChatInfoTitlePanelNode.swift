@@ -13,6 +13,7 @@ private enum ChatInfoTitleButton {
     case report
     case grouping
     case channels
+    case gotopin
     
     func title(_ strings: PresentationStrings) -> String {
         switch self {
@@ -32,6 +33,8 @@ private enum ChatInfoTitleButton {
                 return "Grouping"
             case .channels:
                 return "Channels"
+            case .gotopin:
+                return "Open Pin"
         }
     }
     
@@ -49,6 +52,8 @@ private enum ChatInfoTitleButton {
                 return PresentationResourcesChat.chatTitlePanelCallImage(theme)
             case .report:
                 return PresentationResourcesChat.chatTitlePanelReportImage(theme)
+            case .gotopin:
+                return PresentationResourcesChat.chatTitlePanelGotoPinImage(theme)
             case .grouping:
                 return PresentationResourcesChat.chatTitlePanelGroupingImage(theme)
         }
@@ -78,9 +83,9 @@ private func peerButtons(_ peer: Peer, interfaceState: ChatPresentationInterface
         return buttons
     } else if let channel = peer as? TelegramChannel {
         if channel.flags.contains(.isCreator) || channel.username == nil {
-            return [.search, muteAction, .info]
+            return [.search, muteAction, .gotopin, .info]
         } else {
-            return [.search, .report, muteAction, .info]
+            return [.search, .report, muteAction, .gotopin, .info]
         }
     } else if let group = peer as? TelegramGroup {
         if case .creator = group.role {
@@ -218,6 +223,8 @@ final class ChatInfoTitlePanelNode: ChatTitleAccessoryPanelNode {
                         self.interfaceInteraction?.beginCall()
                     case .report:
                         self.interfaceInteraction?.reportPeer()
+                    case .gotopin:
+                        self.interfaceInteraction?.gotoPin()
                     case .grouping:
                         self.interfaceInteraction?.openGrouping()
                         break

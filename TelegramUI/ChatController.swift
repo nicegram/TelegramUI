@@ -3104,7 +3104,23 @@ public final class ChatController: TelegramController, KeyShortcutResponder, Gal
             
             strongSelf.chatDisplayNode.dismissInput()
             strongSelf.present(actionSheet, in: .window(.root))
-        }, statuses: ChatPanelInterfaceInteractionStatuses(editingMessage: self.editingMessage.get(), startingBot: self.startingBot.get(), unblockingPeer: self.unblockingPeer.get(), searching: self.searching.get(), loadingMessage: self.loadingMessage.get()))
+            }, statuses: ChatPanelInterfaceInteractionStatuses(editingMessage: self.editingMessage.get(), startingBot: self.startingBot.get(), unblockingPeer: self.unblockingPeer.get(), searching: self.searching.get(), loadingMessage: self.loadingMessage.get()),
+               gotoPin: { [weak self] in
+                if let strongSelf = self {
+                    if let pinnedMessage = strongSelf.presentationInterfaceState.pinnedMessage {
+                        strongSelf.navigateToMessage(from: nil, to: .id(pinnedMessage.id))
+                        strongSelf.updateChatPresentationInterfaceState(animated: true, interactive: true, { current in
+                            return current.updatedPinnedMessageId(pinnedMessage.id)
+                        })
+                        strongSelf.updateChatPresentationInterfaceState(animated: true, interactive: true, {
+                            return $0.updatedInterfaceState({ $0.withUpdatedMessageActionsState({ $0.withUpdatedClosedPinnedMessageId(nil) }) })
+                        })
+                        if let chatTitleView = strongSelf.chatTitleView {
+                            chatTitleView.pressed?()
+                        }
+                    }
+                }
+        })
         
         switch self.chatLocation {
             case let .peer(peerId):
