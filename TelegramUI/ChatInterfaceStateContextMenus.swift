@@ -490,15 +490,18 @@ func contextMenuForChatPresentationIntefaceState(chatPresentationInterfaceState:
         }
         
         if let peer = message.peers[message.id.peerId] as? TelegramChannel {
-            if (message.author != nil) && (message.author!.id != context.account.peerId) && peer.hasPermission(.banMembers) {
-                let banDisposables = DisposableDict<PeerId>()
-                actions.append(.context(ContextMenuAction(content: .text(title: chatPresentationInterfaceState.strings.Conversation_ContextMenuBan, accessibilityLabel: chatPresentationInterfaceState.strings.Conversation_ContextMenuBan), action: {
-                    banDisposables.set((fetchChannelParticipant(account: context.account, peerId: peer.id, participantId: message.author!.id)
-                        |> deliverOnMainQueue).start(next: { participant in
-                            controllerInteraction.presentController(channelBannedMemberController(context: context, peerId: peer.id, memberId: message.author!.id, initialParticipant: participant, updated: { _ in }, upgradedToSupergroup: { _, f in f() }), ViewControllerPresentationArguments(presentationAnimation: .modalSheet))
-                        }), forKey: message.author!.id)
-                    
-                })))
+            if let user = message.author as? TelegramUser {
+                if (user.id != context.account.peerId) && peer.hasPermission(.banMembers) {
+                    let banDisposables = DisposableDict<PeerId>()
+                    // TODO: Check is user an admin?
+                    actions.append(.context(ContextMenuAction(content: .text(title: chatPresentationInterfaceState.strings.Conversation_ContextMenuBan, accessibilityLabel: chatPresentationInterfaceState.strings.Conversation_ContextMenuBan), action: {
+                        banDisposables.set((fetchChannelParticipant(account: context.account, peerId: peer.id, participantId: user.id)
+                            |> deliverOnMainQueue).start(next: { participant in
+                                controllerInteraction.presentController(channelBannedMemberController(context: context, peerId: peer.id, memberId: message.author!.id, initialParticipant: participant, updated: { _ in }, upgradedToSupergroup: { _, f in f() }), ViewControllerPresentationArguments(presentationAnimation: .modalSheet))
+                            }), forKey: user.id)
+                        
+                    })))
+                }
             }
         }
         
