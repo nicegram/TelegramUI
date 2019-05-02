@@ -97,6 +97,7 @@ final class ChatRecentActionsController: TelegramController {
         }, requestStopPollInMessage: { _ in
         }, statuses: nil,
            gotoPin: {
+        }, dismissInput: {
         })
         
         self.navigationItem.titleView = self.titleView

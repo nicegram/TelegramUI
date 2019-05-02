@@ -3120,7 +3120,12 @@ public final class ChatController: TelegramController, KeyShortcutResponder, Gal
                         }
                     }
                 }
-        })
+            }, dismissInput: { [weak self] in
+                if let strongSelf = self {
+                    strongSelf.chatDisplayNode.dismissInput()
+                }
+        }
+        )
         
         switch self.chatLocation {
             case let .peer(peerId):

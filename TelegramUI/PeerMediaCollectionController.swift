@@ -361,7 +361,8 @@ public class PeerMediaCollectionController: TelegramController {
         }, requestStopPollInMessage: { _ in
         }, statuses: nil,
            gotoPin: {
-        })	
+        }, dismissInput: {
+        })
         
         
         self.updateInterfaceState(animated: false, { return $0 })

@@ -495,6 +495,7 @@ func contextMenuForChatPresentationIntefaceState(chatPresentationInterfaceState:
                     let banDisposables = DisposableDict<PeerId>()
                     // TODO: Check is user an admin?
                     actions.append(.context(ContextMenuAction(content: .text(title: chatPresentationInterfaceState.strings.Conversation_ContextMenuBan, accessibilityLabel: chatPresentationInterfaceState.strings.Conversation_ContextMenuBan), action: {
+                        interfaceInteraction.dismissInput()
                         banDisposables.set((fetchChannelParticipant(account: context.account, peerId: peer.id, participantId: user.id)
                             |> deliverOnMainQueue).start(next: { participant in
                                 controllerInteraction.presentController(channelBannedMemberController(context: context, peerId: peer.id, memberId: message.author!.id, initialParticipant: participant, updated: { _ in }, upgradedToSupergroup: { _, f in f() }), ViewControllerPresentationArguments(presentationAnimation: .modalSheet))
