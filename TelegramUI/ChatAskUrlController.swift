@@ -2,8 +2,8 @@
 //  ChatAskUrlController.swift
 //  TelegramUI
 //
-//  Created by mac-zen on 5/7/19.
-//  Copyright © 2019 Telegram. All rights reserved.
+//  Created by Sergey Ak on 5/7/19.
+//  Copyright © 2019 Nicegram. All rights reserved.
 //
 import Foundation
 import Display

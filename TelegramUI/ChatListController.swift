@@ -3,7 +3,7 @@
 //  TelegramUI
 //
 //  Created by Sergey Ak on 3/29/19.
-//  Copyright © 2019 Nice. All rights reserved.
+//  Copyright © 2019 Nicegram. All rights reserved.
 //
 
 import UIKit
