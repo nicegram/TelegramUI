@@ -362,6 +362,7 @@ public class PeerMediaCollectionController: TelegramController {
         }, statuses: nil,
            gotoPin: {
         }, dismissInput: {
+        }, askUrlEntity: {
         })
         
         

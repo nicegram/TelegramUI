@@ -3124,7 +3124,30 @@ public final class ChatController: TelegramController, KeyShortcutResponder, Gal
                 if let strongSelf = self {
                     strongSelf.chatDisplayNode.dismissInput()
                 }
-        }
+            }, askUrlEntity: { [weak self] in
+                if let strongSelf = self {
+                    
+                    strongSelf.chatDisplayNode.dismissInput()
+                    
+                    let state = strongSelf.presentationInterfaceState.interfaceState.composeInputState
+                    
+                    var text = ""
+                    
+                    if !state.selectionRange.isEmpty {
+                        let result = state.inputText.string
+                        let lowerBound = String.Index(encodedOffset: state.selectionRange.lowerBound)
+                        let upperBound = String.Index(encodedOffset: state.selectionRange.lowerBound + state.selectionRange.count)
+                        
+                        text = String(result[lowerBound..<upperBound])
+                    }
+                    
+                    strongSelf.present(askUrlController(context: strongSelf.context, text: text, completion: { url in
+                        strongSelf.interfaceInteraction?.updateTextInputStateAndMode { current, inputMode in
+                            return (chatTextInputAddFormattingAttribute(current, attribute: ChatTextInputAttributes.url, value: ChatTextInputUrlAttribute(url: url)), inputMode)
+                        }
+                    }), in: .window(.root), with: ViewControllerPresentationArguments(presentationAnimation: .modalSheet))
+                }
+            }
         )
         
         switch self.chatLocation {

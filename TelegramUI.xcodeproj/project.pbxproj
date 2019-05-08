@@ -161,6 +161,7 @@
 		09FE756D2153F5F900A3120F /* CallRouteActionSheetItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09FE756C2153F5F900A3120F /* CallRouteActionSheetItem.swift */; };
 		512163C6224E595800796C9A /* NiceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 512163C5224E595800796C9A /* NiceSettings.swift */; };
 		512AC2FA2257977700A2F587 /* NiceSettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 512AC2F92257977700A2F587 /* NiceSettingsManager.swift */; };
+		51826D9F2281B189003C936D /* ChatAskUrlController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51826D9E2281B189003C936D /* ChatAskUrlController.swift */; };
 		51C99521224C281200F87678 /* NiceFeaturesListController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C99520224C281200F87678 /* NiceFeaturesListController.swift */; };
 		9F06830921A404AB001D8EDB /* NotificationExceptionControllerNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06830821A404AB001D8EDB /* NotificationExceptionControllerNode.swift */; };
 		9F06830B21A404C4001D8EDB /* NotificationExceptionSettingsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06830A21A404C4001D8EDB /* NotificationExceptionSettingsController.swift */; };
@@ -1327,6 +1328,7 @@
 		09FE756C2153F5F900A3120F /* CallRouteActionSheetItem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CallRouteActionSheetItem.swift; sourceTree = "<group>"; };
 		512163C5224E595800796C9A /* NiceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiceSettings.swift; sourceTree = "<group>"; };
 		512AC2F92257977700A2F587 /* NiceSettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiceSettingsManager.swift; sourceTree = "<group>"; };
+		51826D9E2281B189003C936D /* ChatAskUrlController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAskUrlController.swift; sourceTree = "<group>"; };
 		51C99520224C281200F87678 /* NiceFeaturesListController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiceFeaturesListController.swift; sourceTree = "<group>"; };
 		9F06830821A404AB001D8EDB /* NotificationExceptionControllerNode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotificationExceptionControllerNode.swift; sourceTree = "<group>"; };
 		9F06830A21A404C4001D8EDB /* NotificationExceptionSettingsController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotificationExceptionSettingsController.swift; sourceTree = "<group>"; };
@@ -4649,6 +4651,7 @@
 				D044A0FA20BDC40C00326FAC /* CachedChannelAdmins.swift */,
 				D01848E721A03BDA00B6DEBD /* ChatSearchState.swift */,
 				D06350AD2229A7F800FA2B32 /* InChatPrefetchManager.swift */,
+				51826D9E2281B189003C936D /* ChatAskUrlController.swift */,
 			);
 			name = Chat;
 			sourceTree = "<group>";
@@ -5328,6 +5331,7 @@
 				D02D60B1206C189900FEFE1E /* SecureIdPlaintextFormController.swift in Sources */,
 				D0CFBB951FD8B05000B65C0D /* OverlayInstantVideoDecoration.swift in Sources */,
 				D0EC6CCE1EB9F58800EBF1C3 /* AccountContext.swift in Sources */,
+				51826D9F2281B189003C936D /* ChatAskUrlController.swift in Sources */,
 				D09394132007F5BB00997F31 /* LocationBroadcastNavigationAccessoryPanel.swift in Sources */,
 				D0471B5C1EFEB4F30074D609 /* BotPaymentFieldItemNode.swift in Sources */,
 				D0C27B3D1F4B454800A4E170 /* InstantPagePlayableVideoNode.swift in Sources */,

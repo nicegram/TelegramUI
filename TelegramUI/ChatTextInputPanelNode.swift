@@ -1352,7 +1352,7 @@ class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDelegate {
             } else {
                 return ASEditableTextNodeTargetForAction(target: nil)
             }
-        } else if action == #selector(self.formatAttributesBold(_:)) || action == #selector(self.formatAttributesItalic(_:)) || action == #selector(self.formatAttributesMonospace(_:)) {
+        } else if action == #selector(self.formatAttributesBold(_:)) || action == #selector(self.formatAttributesItalic(_:)) || action == #selector(self.formatAttributesMonospace(_:)) || action == #selector(self.formatAttributesUrl(_:)) {
             if case .format = self.inputMenu.state {
                 return ASEditableTextNodeTargetForAction(target: self)
             } else {
@@ -1388,6 +1388,10 @@ class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDelegate {
         self.interfaceInteraction?.updateTextInputStateAndMode { current, inputMode in
             return (chatTextInputAddFormattingAttribute(current, attribute: ChatTextInputAttributes.monospace), inputMode)
         }
+    }
+    
+    @objc func formatAttributesUrl(_ sender: Any) {
+        self.interfaceInteraction?.askUrlEntity()
     }
     
     @objc func editableTextNode(_ editableTextNode: ASEditableTextNode, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {

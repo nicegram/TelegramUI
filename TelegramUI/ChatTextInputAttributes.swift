@@ -10,6 +10,7 @@ struct ChatTextInputAttributes {
     static let italic = NSAttributedStringKey(rawValue: "Attribute__Italic")
     static let monospace = NSAttributedStringKey(rawValue: "Attribute__Monospace")
     static let textMention = NSAttributedStringKey(rawValue: "Attribute__TextMention")
+    static let url = NSAttributedStringKey(rawValue: "Attribute__Url")
 }
 
 func stateAttributedStringForText(_ text: NSAttributedString) -> NSAttributedString {
@@ -21,6 +22,8 @@ func stateAttributedStringForText(_ text: NSAttributedString) -> NSAttributedStr
             if key == ChatTextInputAttributes.textMention {
                 result.addAttribute(key, value: value, range: range)
             } else if key == ChatTextInputAttributes.bold || key == ChatTextInputAttributes.italic || key == ChatTextInputAttributes.monospace {
+                result.addAttribute(key, value: value, range: range)
+            } else if key == ChatTextInputAttributes.url {
                 result.addAttribute(key, value: value, range: range)
             }
         }
@@ -59,9 +62,12 @@ func textAttributedStringForStateText(_ stateText: NSAttributedString, fontSize:
             } else if key == ChatTextInputAttributes.monospace {
                 result.addAttribute(key, value: value, range: range)
                 fontAttributes.insert(.monospace)
+            } else if key == ChatTextInputAttributes.url {
+                result.addAttribute(key, value: value, range: range)
+                result.addAttribute(NSAttributedStringKey.foregroundColor, value: accentTextColor, range: range)
             }
         }
-            
+        
         if !fontAttributes.isEmpty {
             var font: UIFont?
             if fontAttributes == [.bold, .italic, .monospace] {
@@ -113,6 +119,38 @@ final class ChatTextInputTextMentionAttribute: NSObject {
         }
     }
 }
+
+
+private func urlRangesEqual(_ lhs: [(NSRange, ChatTextInputUrlAttribute)], _ rhs: [(NSRange, ChatTextInputUrlAttribute)]) -> Bool {
+    if lhs.count != rhs.count {
+        return false
+    }
+    for i in 0 ..< lhs.count {
+        if lhs[i].0 != rhs[i].0 || lhs[i].1.url != rhs[i].1.url {
+            return false
+        }
+    }
+    return true
+}
+
+final class ChatTextInputUrlAttribute: NSObject {
+    let url: String
+    
+    init(url: String) {
+        self.url = url
+        
+        super.init()
+    }
+    
+    override func isEqual(_ object: Any?) -> Bool {
+        if let other = object as? ChatTextInputUrlAttribute {
+            return self.url == other.url
+        } else {
+            return false
+        }
+    }
+}
+
 
 func refreshChatTextInputAttributes(_ textNode: ASEditableTextNode, theme: PresentationTheme, baseFontSize: CGFloat) {
     guard let initialAttributedText = textNode.attributedText, initialAttributedText.length != 0 else {
@@ -264,6 +302,9 @@ func refreshChatTextInputAttributes(_ textNode: ASEditableTextNode, theme: Prese
                 } else if key == ChatTextInputAttributes.monospace {
                     textNode.textView.textStorage.addAttribute(key, value: value, range: range)
                     fontAttributes.insert(.monospace)
+                } else if key == ChatTextInputAttributes.url {
+                    textNode.textView.textStorage.addAttribute(key, value: value, range: range)
+                    textNode.textView.textStorage.addAttribute(NSAttributedStringKey.foregroundColor, value: theme.chat.inputPanel.panelControlAccentColor, range: range)
                 }
             }
                 
@@ -315,10 +356,10 @@ func refreshChatTextInputTypingAttributes(_ textNode: ASEditableTextNode, theme:
     textNode.textView.typingAttributes = filteredAttributes
 }
 
-func chatTextInputAddFormattingAttribute(_ state: ChatTextInputState, attribute: NSAttributedStringKey) -> ChatTextInputState {
+func chatTextInputAddFormattingAttribute(_ state: ChatTextInputState, attribute: NSAttributedStringKey, value: Any = true) -> ChatTextInputState {
     if !state.selectionRange.isEmpty {
         let result = NSMutableAttributedString(attributedString: state.inputText)
-        result.addAttribute(attribute, value: true as Bool, range: NSRange(location: state.selectionRange.lowerBound, length: state.selectionRange.count))
+        result.addAttribute(attribute, value: value, range: NSRange(location: state.selectionRange.lowerBound, length: state.selectionRange.count))
         return ChatTextInputState(inputText: result, selectionRange: state.selectionRange)
     } else {
         return state
