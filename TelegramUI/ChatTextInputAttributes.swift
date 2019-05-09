@@ -65,6 +65,7 @@ func textAttributedStringForStateText(_ stateText: NSAttributedString, fontSize:
             } else if key == ChatTextInputAttributes.url {
                 result.addAttribute(key, value: value, range: range)
                 result.addAttribute(NSAttributedStringKey.foregroundColor, value: accentTextColor, range: range)
+                result.addAttribute(NSAttributedStringKey.underlineStyle, value: NSUnderlineStyle.styleSingle.rawValue, range: range)
             }
         }
         
@@ -305,6 +306,7 @@ func refreshChatTextInputAttributes(_ textNode: ASEditableTextNode, theme: Prese
                 } else if key == ChatTextInputAttributes.url {
                     textNode.textView.textStorage.addAttribute(key, value: value, range: range)
                     textNode.textView.textStorage.addAttribute(NSAttributedStringKey.foregroundColor, value: theme.chat.inputPanel.panelControlAccentColor, range: range)
+                    textNode.textView.textStorage.addAttribute(NSAttributedStringKey.underlineStyle, value: NSUnderlineStyle.styleSingle.rawValue, range: range)
                 }
             }
                 
