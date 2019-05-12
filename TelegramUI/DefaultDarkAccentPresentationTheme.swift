@@ -3,7 +3,7 @@ import UIKit
 
 private let accentColor: UIColor = UIColor(rgb: 0x2EA6FF)
 private let destructiveColor: UIColor = UIColor(rgb: 0xFF6767)
-private let constructiveColor: UIColor = UIColor(rgb: 0x4cd964)
+private let constructiveColor: UIColor = UIColor(rgb: 0x08a723)
 private let secretColor: UIColor = UIColor(rgb: 0x89DF9E)
 
 private let rootStatusBar = PresentationThemeRootNavigationStatusBar(
@@ -89,13 +89,13 @@ private let list = PresentationThemeList(
     freeMonoIcon: UIColor(rgb: 0x82888E),
     itemSwitchColors: switchColors,
     itemDisclosureActions: PresentationThemeItemDisclosureActions(
-        neutral1: PresentationThemeItemDisclosureAction(fillColor: UIColor(rgb: 0x415A71), foregroundColor: .white),
-        neutral2: PresentationThemeItemDisclosureAction(fillColor: UIColor(rgb: 0x374F63), foregroundColor: .white),
-        destructive: PresentationThemeItemDisclosureAction(fillColor: destructiveColor, foregroundColor: .white),
+        neutral1: PresentationThemeItemDisclosureAction(fillColor: UIColor(rgb: 0x007cd6), foregroundColor: .white),
+        neutral2: PresentationThemeItemDisclosureAction(fillColor: UIColor(rgb: 0xcd7800), foregroundColor: .white),
+        destructive: PresentationThemeItemDisclosureAction(fillColor: UIColor(rgb: 0xc70c0c), foregroundColor: .white),
         constructive: PresentationThemeItemDisclosureAction(fillColor: constructiveColor, foregroundColor: .white),
-        accent: PresentationThemeItemDisclosureAction(fillColor: accentColor, foregroundColor: .white),
-        warning: PresentationThemeItemDisclosureAction(fillColor: UIColor(rgb: 0x3c4e61), foregroundColor: .white),
-        inactive: PresentationThemeItemDisclosureAction(fillColor: UIColor(rgb: 0x415A71), foregroundColor: .white)
+        accent: PresentationThemeItemDisclosureAction(fillColor: UIColor(rgb: 0x007cd6), foregroundColor: .white),
+        warning: PresentationThemeItemDisclosureAction(fillColor: UIColor(rgb: 0xcd7800), foregroundColor: .white),
+        inactive: PresentationThemeItemDisclosureAction(fillColor: UIColor(rgb: 0x26384c), foregroundColor: .white)
     ),
     itemCheckColors: PresentationThemeCheck(
         strokeColor: UIColor(rgb: 0xDBF5FF, alpha: 0.5),
@@ -110,7 +110,8 @@ private let list = PresentationThemeList(
         controlColor: UIColor(rgb: 0x4d4d4d)
     ),
     mediaPlaceholderColor: UIColor(rgb: 0x1e2c3a),
-    scrollIndicatorColor: UIColor(white: 1.0, alpha: 0.3)
+    scrollIndicatorColor: UIColor(white: 1.0, alpha: 0.3),
+    pageIndicatorInactiveColor: UIColor(rgb: 0xDBF5FF, alpha: 0.4)
 )
 
 private let chatList = PresentationThemeChatList(
@@ -141,7 +142,10 @@ private let chatList = PresentationThemeChatList(
     searchBarKeyboardColor: .dark,
     verifiedIconFillColor: accentColor,
     verifiedIconForegroundColor: .white,
-    secretIconColor: secretColor
+    secretIconColor: secretColor,
+    pinnedArchiveAvatarColor: PresentationThemeArchiveAvatarColors(backgroundColors: (UIColor(rgb: 0x72d5fd), UIColor(rgb: 0x2a9ef1)), foregroundColor: .white),
+    unpinnedArchiveAvatarColor: PresentationThemeArchiveAvatarColors(backgroundColors: (UIColor(rgb: 0x5d6d77), UIColor(rgb: 0x4e5c64)), foregroundColor: UIColor(rgb: 0x18222d)),
+    onlineDotColor: UIColor(rgb: 0x4cc91f)
 )
 
 private let bubble = PresentationThemeChatBubble(

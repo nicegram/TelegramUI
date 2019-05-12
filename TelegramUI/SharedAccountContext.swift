@@ -63,6 +63,18 @@ private struct AccountAttributes: Equatable {
     let isTestingEnvironment: Bool
 }
 
+private enum AddedAccountResult {
+    case upgrading(Float)
+    case ready(AccountRecordId, Account?, Int32)
+}
+
+private enum AddedAccountsResult {
+    case upgrading(Float)
+    case ready([(AccountRecordId, Account?, Int32)])
+}
+
+private var testHasInstance = false
+
 public final class SharedAccountContext {
     let mainWindow: Window1?
     public let applicationBindings: TelegramApplicationBindings
@@ -146,13 +158,20 @@ public final class SharedAccountContext {
     public var presentGlobalController: (ViewController, Any?) -> Void = { _, _ in }
     public var presentCrossfadeController: () -> Void = {}
     
-    public init(mainWindow: Window1?, basePath: String, accountManager: AccountManager, applicationBindings: TelegramApplicationBindings, initialPresentationDataAndSettings: InitialPresentationDataAndSettings, networkArguments: NetworkInitializationArguments, rootPath: String, legacyBasePath: String?, legacyCache: LegacyCache?, apsNotificationToken: Signal<Data?, NoError>, voipNotificationToken: Signal<Data?, NoError>, setNotificationCall: @escaping (PresentationCall?) -> Void, navigateToChat: @escaping (AccountRecordId, PeerId, MessageId?) -> Void) {
+    private let displayUpgradeProgress: (Float?) -> Void
+    
+    public init(mainWindow: Window1?, basePath: String, encryptionParameters: ValueBoxEncryptionParameters, accountManager: AccountManager, applicationBindings: TelegramApplicationBindings, initialPresentationDataAndSettings: InitialPresentationDataAndSettings, networkArguments: NetworkInitializationArguments, rootPath: String, legacyBasePath: String?, legacyCache: LegacyCache?, apsNotificationToken: Signal<Data?, NoError>, voipNotificationToken: Signal<Data?, NoError>, setNotificationCall: @escaping (PresentationCall?) -> Void, navigateToChat: @escaping (AccountRecordId, PeerId, MessageId?) -> Void, displayUpgradeProgress: @escaping (Float?) -> Void = { _ in }) {
         assert(Queue.mainQueue().isCurrent())
+        
+        precondition(!testHasInstance)
+        testHasInstance = true
+        
         self.mainWindow = mainWindow
         self.applicationBindings = applicationBindings
         self.basePath = basePath
         self.accountManager = accountManager
         self.navigateToChatImpl = navigateToChat
+        self.displayUpgradeProgress = displayUpgradeProgress
         
         self.accountManager.mediaBox.fetchCachedResourceRepresentation = { (resource, representation) -> Signal<CachedMediaResourceRepresentationResult, NoError> in
             return fetchCachedSharedResourceRepresentation(accountManager: accountManager, resource: resource, representation: representation)
@@ -260,9 +279,13 @@ public final class SharedAccountContext {
             }
         }))
         
+        let startTime = CFAbsoluteTimeGetCurrent()
+        
         let differenceDisposable = MetaDisposable()
         let _ = (accountManager.accountRecords()
         |> map { view -> (AccountRecordId?, [AccountRecordId: AccountAttributes], (AccountRecordId, Bool)?) in
+            print("SharedAccountContext: records appeared in \(CFAbsoluteTimeGetCurrent() - startTime)")
+            
             var result: [AccountRecordId: AccountAttributes] = [:]
             for record in view.records {
                 let isLoggedOut = record.attributes.contains(where: { attribute in
@@ -314,12 +337,12 @@ public final class SharedAccountContext {
             return true
         })
         |> deliverOnMainQueue).start(next: { primaryId, records, authRecord in
-            var addedSignals: [Signal<(AccountRecordId, Account?, Int32), NoError>] = []
+            var addedSignals: [Signal<AddedAccountResult, NoError>] = []
             var addedAuthSignal: Signal<UnauthorizedAccount?, NoError> = .single(nil)
             for (id, attributes) in records {
                 if self.activeAccountsValue?.accounts.firstIndex(where: { $0.0 == id}) == nil {
-                    addedSignals.append(accountWithId(accountManager: accountManager, networkArguments: networkArguments, id: id, supplementary: false, rootPath: rootPath, beginWithTestingEnvironment: attributes.isTestingEnvironment, auxiliaryMethods: telegramAccountAuxiliaryMethods)
-                    |> map { result -> (AccountRecordId, Account?, Int32) in
+                    addedSignals.append(accountWithId(accountManager: accountManager, networkArguments: networkArguments, id: id, encryptionParameters: encryptionParameters, supplementary: !applicationBindings.isMainApp, rootPath: rootPath, beginWithTestingEnvironment: attributes.isTestingEnvironment, auxiliaryMethods: telegramAccountAuxiliaryMethods)
+                    |> map { result -> AddedAccountResult in
                         switch result {
                             case let .authorized(account):
                                 setupAccount(account, fetchCachedResourceRepresentation: fetchCachedResourceRepresentation, transformOutgoingMessageMedia: transformOutgoingMessageMedia, preFetchedResourcePath: { resource in
@@ -329,40 +352,96 @@ public final class SharedAccountContext {
                                         return nil
                                     }
                                 })
-                                return (id, account, attributes.sortIndex)
+                                return .ready(id, account, attributes.sortIndex)
+                            case let .upgrading(progress):
+                                return .upgrading(progress)
                             default:
-                                return (id, nil, attributes.sortIndex)
+                                return .ready(id, nil, attributes.sortIndex)
                         }
                     })
                 }
             }
             if let authRecord = authRecord, authRecord.0 != self.activeAccountsValue?.currentAuth?.id {
-                addedAuthSignal = accountWithId(accountManager: accountManager, networkArguments: networkArguments, id: authRecord.0, supplementary: false, rootPath: rootPath, beginWithTestingEnvironment: authRecord.1, auxiliaryMethods: telegramAccountAuxiliaryMethods)
-                |> map { result -> UnauthorizedAccount? in
+                addedAuthSignal = accountWithId(accountManager: accountManager, networkArguments: networkArguments, id: authRecord.0, encryptionParameters: encryptionParameters, supplementary: !applicationBindings.isMainApp, rootPath: rootPath, beginWithTestingEnvironment: authRecord.1, auxiliaryMethods: telegramAccountAuxiliaryMethods)
+                |> mapToSignal { result -> Signal<UnauthorizedAccount?, NoError> in
                     switch result {
                         case let .unauthorized(account):
-                            return account
+                            return .single(account)
+                        case .upgrading:
+                            return .complete()
                         default:
-                            return nil
+                            return .single(nil)
                     }
                 }
             }
-            differenceDisposable.set((combineLatest(combineLatest(addedSignals), addedAuthSignal)
-            |> deliverOnMainQueue).start(next: { accounts, authAccount in
+            
+            let mappedAddedAccounts = combineLatest(queue: .mainQueue(), addedSignals)
+            |> map { results -> AddedAccountsResult in
+                var readyAccounts: [(AccountRecordId, Account?, Int32)] = []
+                var totalProgress: Float = 0.0
+                var hasItemsWithProgress = false
+                for result in results {
+                    switch result {
+                        case let .ready(id, account, sortIndex):
+                            readyAccounts.append((id, account, sortIndex))
+                            totalProgress += 1.0
+                        case let .upgrading(progress):
+                            hasItemsWithProgress = true
+                            totalProgress += progress
+                    }
+                }
+                if hasItemsWithProgress, !results.isEmpty {
+                    return .upgrading(totalProgress / Float(results.count))
+                } else {
+                    return .ready(readyAccounts)
+                }
+            }
+            
+            differenceDisposable.set((combineLatest(queue: .mainQueue(), mappedAddedAccounts, addedAuthSignal)
+            |> deliverOnMainQueue).start(next: { mappedAddedAccounts, authAccount in
+                print("SharedAccountContext: accounts processed in \(CFAbsoluteTimeGetCurrent() - startTime)")
+                
+                var addedAccounts: [(AccountRecordId, Account?, Int32)] = []
+                switch mappedAddedAccounts {
+                    case let .upgrading(progress):
+                        self.displayUpgradeProgress(progress)
+                        return
+                    case let .ready(value):
+                        addedAccounts = value
+                }
+                
+                self.displayUpgradeProgress(nil)
+                
                 var hadUpdates = false
                 if self.activeAccountsValue == nil {
                     self.activeAccountsValue = (nil, [], nil)
                     hadUpdates = true
                 }
-                for accountRecord in accounts {
+                
+                struct AccountPeerKey: Hashable {
+                    let peerId: PeerId
+                    let isTestingEnvironment: Bool
+                }
+                
+                var existingAccountPeerKeys = Set<AccountPeerKey>()
+                for accountRecord in addedAccounts {
                     if let account = accountRecord.1 {
-                        if let index = self.activeAccountsValue?.accounts.firstIndex(where: { $0.0 == account.id }) {
-                            self.activeAccountsValue?.accounts.remove(at: index)
-                            assertionFailure()
+                        if existingAccountPeerKeys.contains(AccountPeerKey(peerId: account.peerId, isTestingEnvironment: account.testingEnvironment)) {
+                            let _ = accountManager.transaction({ transaction in
+                                transaction.updateRecord(accountRecord.0, { _ in
+                                    return nil
+                                })
+                            }).start()
+                        } else {
+                            existingAccountPeerKeys.insert(AccountPeerKey(peerId: account.peerId, isTestingEnvironment: account.testingEnvironment))
+                            if let index = self.activeAccountsValue?.accounts.firstIndex(where: { $0.0 == account.id }) {
+                                self.activeAccountsValue?.accounts.remove(at: index)
+                                assertionFailure()
+                            }
+                            self.activeAccountsValue!.accounts.append((account.id, account, accountRecord.2))
+                            account.resetStateManagement()
+                            hadUpdates = true
                         }
-                        self.activeAccountsValue!.accounts.append((account.id, account, accountRecord.2))
-                        account.resetStateManagement()
-                        hadUpdates = true
                     } else {
                         let _ = accountManager.transaction({ transaction in
                             transaction.updateRecord(accountRecord.0, { _ in
@@ -541,7 +620,7 @@ public final class SharedAccountContext {
             let _ = immediateHasOngoingCallValue.swap(value)
         })
         
-        let _ = managedCleanupAccounts(networkArguments: networkArguments, accountManager: self.accountManager, rootPath: rootPath, auxiliaryMethods: telegramAccountAuxiliaryMethods).start()
+        let _ = managedCleanupAccounts(networkArguments: networkArguments, accountManager: self.accountManager, rootPath: rootPath, auxiliaryMethods: telegramAccountAuxiliaryMethods, encryptionParameters: encryptionParameters).start()
         
         self.updateNotificationTokensRegistration()
     }
@@ -573,7 +652,7 @@ public final class SharedAccountContext {
         }
         |> distinctUntilChanged
         
-        self.registeredNotificationTokensDisposable.set((combineLatest(allAccounts, self.activeAccounts)
+        self.registeredNotificationTokensDisposable.set((combineLatest(queue: .mainQueue(), allAccounts, self.activeAccounts)
         |> mapToSignal { allAccounts, activeAccountsAndInfo -> Signal<Never, NoError> in
             let (primary, activeAccounts, _) = activeAccountsAndInfo
             var applied: [Signal<Never, NoError>] = []

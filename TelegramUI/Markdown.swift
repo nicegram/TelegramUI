@@ -37,6 +37,9 @@ func escapedPlaintextForMarkdown(_ string: String) -> String {
     while true {
         let range = nsString.rangeOfCharacter(from: controlCharactersSet, options: [], range: remainingRange)
         if range.location != NSNotFound {
+            if range.location - remainingRange.location > 0 {
+                result.append(nsString.substring(with: NSMakeRange(remainingRange.location, range.location - remainingRange.location)))
+            }
             result.append("\\")
             result.append(nsString.substring(with: NSMakeRange(range.location, range.length)))
             remainingRange = NSMakeRange(range.location + range.length, remainingRange.location + remainingRange.length - (range.location + range.length))
@@ -108,6 +111,9 @@ func parseMarkdownIntoAttributedString(_ string: String, attributes: MarkdownAtt
                             remainingRange = NSMakeRange(range.location + 1, remainingRange.length - 1)
                         }
                     } else {
+                        if result.string.hasSuffix("\\") {
+                            result.deleteCharacters(in: NSMakeRange(result.string.count - 1, 1))
+                        }
                         result.append(NSAttributedString(string: nsString.substring(with: NSMakeRange(remainingRange.location, 1)), attributes: bodyAttributes))
                         remainingRange = NSMakeRange(range.location + 1, remainingRange.length - 1)
                     }
@@ -154,4 +160,8 @@ private func parseBold(string: NSString, remainingRange: inout NSRange) -> Strin
         return result
     }
     return nil
+}
+
+func foldMultipleLineBreaks(_ string: String) -> String {
+    return string.replacingOccurrences(of: "(([\n\r]\\s*){2,})+", with: "\n\n", options: .regularExpression, range: nil)
 }

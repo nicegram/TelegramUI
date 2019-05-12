@@ -14,6 +14,7 @@ class ChatMessageInstantVideoItemNode: ChatMessageItemView {
     private let interactiveVideoNode: ChatMessageInteractiveInstantVideoNode
     
     private var selectionNode: ChatMessageSelectionNode?
+    private var deliveryFailedNode: ChatMessageDeliveryFailedNode?
     private var shareButtonNode: HighlightableButtonNode?
     
     private var swipeToReplyNode: ChatMessageSwipeToReplyNode?
@@ -120,8 +121,8 @@ class ChatMessageInstantVideoItemNode: ChatMessageItemView {
                     } else if incoming {
                         hasAvatar = true
                     }
-                case .group:
-                    hasAvatar = true
+                /*case .group:
+                    hasAvatar = true*/
             }
             
             if hasAvatar {
@@ -174,6 +175,11 @@ class ChatMessageInstantVideoItemNode: ChatMessageItemView {
                 layoutInsets.top += layoutConstants.timestampHeaderHeight
             }
             
+            var deliveryFailedInset: CGFloat = 0.0
+            if item.content.firstMessage.flags.contains(.Failed) {
+                deliveryFailedInset += 24.0
+            }
+            
             let displaySize = CGSize(width: 212.0, height: 212.0)
             
             var automaticDownload = true
@@ -185,7 +191,7 @@ class ChatMessageInstantVideoItemNode: ChatMessageItemView {
             
             let (videoLayout, videoApply) = makeVideoLayout(ChatMessageBubbleContentItem(context: item.context, controllerInteraction: item.controllerInteraction, message: item.message, read: item.read, presentationData: item.presentationData, associatedData: item.associatedData), params.width - params.leftInset - params.rightInset - avatarInset, displaySize, .free, automaticDownload)
             
-            let videoFrame = CGRect(origin: CGPoint(x: (incoming ? (params.leftInset + layoutConstants.bubble.edgeInset + avatarInset + layoutConstants.bubble.contentInsets.left) : (params.width - params.rightInset - videoLayout.contentSize.width - layoutConstants.bubble.edgeInset - layoutConstants.bubble.contentInsets.left)), y: 0.0), size: videoLayout.contentSize)
+            let videoFrame = CGRect(origin: CGPoint(x: (incoming ? (params.leftInset + layoutConstants.bubble.edgeInset + avatarInset + layoutConstants.bubble.contentInsets.left) : (params.width - params.rightInset - videoLayout.contentSize.width - layoutConstants.bubble.edgeInset - layoutConstants.bubble.contentInsets.left - deliveryFailedInset)), y: 0.0), size: videoLayout.contentSize)
             
             var viaBotApply: (TextNodeLayout, () -> TextNode)?
             var replyInfoApply: (CGSize, () -> ChatMessageReplyInfoNode)?
@@ -416,6 +422,37 @@ class ChatMessageInstantVideoItemNode: ChatMessageItemView {
                         strongSelf.replyInfoNode = nil
                     }
                     
+                    if item.content.firstMessage.flags.contains(.Failed) {
+                        let deliveryFailedNode: ChatMessageDeliveryFailedNode
+                        var isAppearing = false
+                        if let current = strongSelf.deliveryFailedNode {
+                            deliveryFailedNode = current
+                        } else {
+                            isAppearing = true
+                            deliveryFailedNode = ChatMessageDeliveryFailedNode(tapped: {
+                                if let item = self?.item {
+                                    item.controllerInteraction.requestRedeliveryOfFailedMessages(item.content.firstMessage.id)
+                                }
+                            })
+                            strongSelf.deliveryFailedNode = deliveryFailedNode
+                            strongSelf.addSubnode(deliveryFailedNode)
+                        }
+                        let deliveryFailedSize = deliveryFailedNode.updateLayout(theme: item.presentationData.theme.theme)
+                        let deliveryFailedFrame = CGRect(origin: CGPoint(x: videoFrame.maxX + deliveryFailedInset - deliveryFailedSize.width, y: videoFrame.maxY - deliveryFailedSize.height), size: deliveryFailedSize)
+                        if isAppearing {
+                            deliveryFailedNode.frame = deliveryFailedFrame
+                            transition.animatePositionAdditive(node: deliveryFailedNode, offset: CGPoint(x: deliveryFailedInset, y: 0.0))
+                        } else {
+                            transition.updateFrame(node: deliveryFailedNode, frame: deliveryFailedFrame)
+                        }
+                    } else if let deliveryFailedNode = strongSelf.deliveryFailedNode {
+                        strongSelf.deliveryFailedNode = nil
+                        transition.updateAlpha(node: deliveryFailedNode, alpha: 0.0)
+                        transition.updateFrame(node: deliveryFailedNode, frame: deliveryFailedNode.frame.offsetBy(dx: 24.0, dy: 0.0), completion: { [weak deliveryFailedNode] _ in
+                            deliveryFailedNode?.removeFromSupernode()
+                        })
+                    }
+                    
                     if let updatedForwardBackgroundNode = updatedForwardBackgroundNode {
                         if strongSelf.forwardBackgroundNode == nil {
                             strongSelf.forwardBackgroundNode = updatedForwardBackgroundNode
@@ -497,6 +534,13 @@ class ChatMessageInstantVideoItemNode: ChatMessageItemView {
                                 if item.effectiveAuthorId?.namespace == Namespaces.Peer.Empty {
                                     item.controllerInteraction.displayMessageTooltip(item.content.firstMessage.id,  item.presentationData.strings.Conversation_ForwardAuthorHiddenTooltip, self, avatarNode.frame)
                                 } else {
+                                    if let channel = item.content.firstMessage.forwardInfo?.author as? TelegramChannel, channel.username == nil {
+                                        if case .member = channel.participationStatus {
+                                        } else {
+                                            item.controllerInteraction.displayMessageTooltip(item.message.id, item.presentationData.strings.Conversation_PrivateChannelTooltip, forwardInfoNode, nil)
+                                            return
+                                        }
+                                    }
                                     item.controllerInteraction.openPeer(item.effectiveAuthorId ?? author.id, navigate, item.message)
                                 }
                             }
@@ -517,6 +561,13 @@ class ChatMessageInstantVideoItemNode: ChatMessageItemView {
                         if let forwardInfoNode = self.forwardInfoNode, forwardInfoNode.frame.contains(location) {
                             if let item = self.item, let forwardInfo = item.message.forwardInfo {
                                 if let sourceMessageId = forwardInfo.sourceMessageId {
+                                    if let channel = forwardInfo.author as? TelegramChannel, channel.username == nil {
+                                        if case .member = channel.participationStatus {
+                                        } else {
+                                            item.controllerInteraction.displayMessageTooltip(item.message.id, item.presentationData.strings.Conversation_PrivateChannelTooltip, forwardInfoNode, nil)
+                                            return
+                                        }
+                                    }
                                     item.controllerInteraction.navigateToMessage(item.message.id, sourceMessageId)
                                 } else if let id = forwardInfo.source?.id ?? forwardInfo.author?.id {
                                     item.controllerInteraction.openPeer(id, .chat(textInputState: nil, messageId: nil), nil)
@@ -644,7 +695,7 @@ class ChatMessageInstantVideoItemNode: ChatMessageItemView {
             let offset: CGFloat = incoming ? 42.0 : 0.0
             
             if let selectionNode = self.selectionNode {
-                selectionNode.updateSelected(selected, animated: false)
+                selectionNode.updateSelected(selected, animated: animated)
                 selectionNode.frame = CGRect(origin: CGPoint(x: -offset, y: 0.0), size: CGSize(width: self.contentBounds.size.width, height: self.contentBounds.size.height))
                 self.subnodeTransform = CATransform3DMakeTranslation(offset, 0.0, 0.0);
             } else {
@@ -709,7 +760,7 @@ class ChatMessageInstantVideoItemNode: ChatMessageItemView {
         self.layer.animateAlpha(from: 0.0, to: 1.0, duration: 0.2)
     }
     
-    override func playMediaWithSound() -> (() -> Void, Bool, Bool, Bool, ASDisplayNode?)? {
+    override func playMediaWithSound() -> ((Double?) -> Void, Bool, Bool, Bool, ASDisplayNode?)? {
         return self.interactiveVideoNode.playMediaWithSound()
     }
 }

@@ -5,19 +5,25 @@ import SwiftSignalKit
 public struct PresentationPasscodeSettings: PreferencesEntry, Equatable {
     public var enableBiometrics: Bool
     public var autolockTimeout: Int32?
+    public var biometricsDomainState: Data?
+    public var shareBiometricsDomainState: Data?
     
     public static var defaultSettings: PresentationPasscodeSettings {
-        return PresentationPasscodeSettings(enableBiometrics: false, autolockTimeout: nil)
+        return PresentationPasscodeSettings(enableBiometrics: false, autolockTimeout: nil, biometricsDomainState: nil, shareBiometricsDomainState: nil)
     }
     
-    init(enableBiometrics: Bool, autolockTimeout: Int32?) {
+    init(enableBiometrics: Bool, autolockTimeout: Int32?, biometricsDomainState: Data?, shareBiometricsDomainState: Data?) {
         self.enableBiometrics = enableBiometrics
         self.autolockTimeout = autolockTimeout
+        self.biometricsDomainState = biometricsDomainState
+        self.shareBiometricsDomainState = shareBiometricsDomainState
     }
     
     public init(decoder: PostboxDecoder) {
         self.enableBiometrics = decoder.decodeInt32ForKey("s", orElse: 0) != 0
         self.autolockTimeout = decoder.decodeOptionalInt32ForKey("al")
+        self.biometricsDomainState = decoder.decodeDataForKey("ds")
+        self.shareBiometricsDomainState = decoder.decodeDataForKey("sds")
     }
     
     public func encode(_ encoder: PostboxEncoder) {
@@ -26,6 +32,16 @@ public struct PresentationPasscodeSettings: PreferencesEntry, Equatable {
             encoder.encodeInt32(autolockTimeout, forKey: "al")
         } else {
             encoder.encodeNil(forKey: "al")
+        }
+        if let biometricsDomainState = self.biometricsDomainState {
+            encoder.encodeData(biometricsDomainState, forKey: "ds")
+        } else {
+            encoder.encodeNil(forKey: "ds")
+        }
+        if let shareBiometricsDomainState = self.shareBiometricsDomainState {
+            encoder.encodeData(shareBiometricsDomainState, forKey: "sds")
+        } else {
+            encoder.encodeNil(forKey: "sds")
         }
     }
     
@@ -38,15 +54,23 @@ public struct PresentationPasscodeSettings: PreferencesEntry, Equatable {
     }
     
     public static func ==(lhs: PresentationPasscodeSettings, rhs: PresentationPasscodeSettings) -> Bool {
-        return lhs.enableBiometrics == rhs.enableBiometrics && lhs.autolockTimeout == rhs.autolockTimeout
+        return lhs.enableBiometrics == rhs.enableBiometrics && lhs.autolockTimeout == rhs.autolockTimeout && lhs.biometricsDomainState == rhs.biometricsDomainState && lhs.shareBiometricsDomainState == rhs.shareBiometricsDomainState
     }
     
     func withUpdatedEnableBiometrics(_ enableBiometrics: Bool) -> PresentationPasscodeSettings {
-        return PresentationPasscodeSettings(enableBiometrics: enableBiometrics, autolockTimeout: self.autolockTimeout)
+        return PresentationPasscodeSettings(enableBiometrics: enableBiometrics, autolockTimeout: self.autolockTimeout, biometricsDomainState: self.biometricsDomainState, shareBiometricsDomainState: self.shareBiometricsDomainState)
     }
     
     func withUpdatedAutolockTimeout(_ autolockTimeout: Int32?) -> PresentationPasscodeSettings {
-        return PresentationPasscodeSettings(enableBiometrics: self.enableBiometrics, autolockTimeout: autolockTimeout)
+        return PresentationPasscodeSettings(enableBiometrics: self.enableBiometrics, autolockTimeout: autolockTimeout, biometricsDomainState: self.biometricsDomainState, shareBiometricsDomainState: self.shareBiometricsDomainState)
+    }
+    
+    func withUpdatedBiometricsDomainState(_ biometricsDomainState: Data?) -> PresentationPasscodeSettings {
+        return PresentationPasscodeSettings(enableBiometrics: self.enableBiometrics, autolockTimeout: autolockTimeout, biometricsDomainState: biometricsDomainState, shareBiometricsDomainState: self.shareBiometricsDomainState)
+    }
+    
+    func withUpdatedShareBiometricsDomainState(_ shareBiometricsDomainState: Data?) -> PresentationPasscodeSettings {
+        return PresentationPasscodeSettings(enableBiometrics: self.enableBiometrics, autolockTimeout: autolockTimeout, biometricsDomainState: self.biometricsDomainState, shareBiometricsDomainState: shareBiometricsDomainState)
     }
 }
 

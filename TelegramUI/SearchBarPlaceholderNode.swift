@@ -133,7 +133,7 @@ class SearchBarPlaceholderNode: ASDisplayNode {
                     if let iconImage = strongSelf.iconNode.image {
                         iconSize = iconImage.size
                         totalWidth += iconSize.width + spacing
-                         transition.updateFrame(node: strongSelf.iconNode, frame: CGRect(origin: CGPoint(x: floor((constrainedSize.width - totalWidth) / 2.0), y: floorToScreenPixels((height - iconSize.height) / 2.0)), size: iconSize))
+                        transition.updateFrame(node: strongSelf.iconNode, frame: CGRect(origin: CGPoint(x: floor((constrainedSize.width - totalWidth) / 2.0), y: floorToScreenPixels((height - iconSize.height) / 2.0)), size: iconSize))
                     }
                     var textOffset: CGFloat = 0.0
                     if constrainedSize.height >= 36.0 {
@@ -148,6 +148,10 @@ class SearchBarPlaceholderNode: ASDisplayNode {
                     } else if innerAlpha < 0.0001 {
                         innerAlpha = 0.0
                     }
+                    if !transition.isAnimated {
+                        strongSelf.labelNode.layer.removeAnimation(forKey: "opacity")
+                        strongSelf.iconNode.layer.removeAnimation(forKey: "opacity")
+                    }
                     if strongSelf.labelNode.alpha != innerAlpha {
                         transition.updateAlpha(node: strongSelf.labelNode, alpha: innerAlpha)
                         transition.updateAlpha(node: strongSelf.iconNode, alpha: innerAlpha)
@@ -155,6 +159,12 @@ class SearchBarPlaceholderNode: ASDisplayNode {
                     
                     let outerAlpha = min(0.3, expansionProgress) / 0.3
                     let cornerRadius = min(strongSelf.fieldStyle.cornerDiameter / 2.0, height / 2.0)
+                    if !transition.isAnimated {
+                        strongSelf.backgroundNode.layer.removeAnimation(forKey: "cornerRadius")
+                        strongSelf.backgroundNode.layer.removeAnimation(forKey: "position")
+                        strongSelf.backgroundNode.layer.removeAnimation(forKey: "bounds")
+                        strongSelf.backgroundNode.layer.removeAnimation(forKey: "opacity")
+                    }
                     transition.updateCornerRadius(node: strongSelf.backgroundNode, cornerRadius: cornerRadius)
                     transition.updateAlpha(node: strongSelf.backgroundNode, alpha: outerAlpha)
                     transition.updateFrame(node: strongSelf.backgroundNode, frame: CGRect(origin: CGPoint(), size: CGSize(width: constrainedSize.width, height: height)))

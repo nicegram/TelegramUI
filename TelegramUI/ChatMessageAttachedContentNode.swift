@@ -307,7 +307,7 @@ final class ChatMessageAttachedContentNode: ASDisplayNode {
                     sentViaBot = true
                 }
             }
-            if let author = message.author as? TelegramUser, author.botInfo != nil {
+            if let author = message.author as? TelegramUser, author.botInfo != nil || author.flags.contains(.isSupport) {
                 sentViaBot = true
             }
             
@@ -531,7 +531,7 @@ final class ChatMessageAttachedContentNode: ASDisplayNode {
                                 }
                             }
                         
-                            statusSizeAndApply = statusLayout(presentationData.theme, presentationData.strings, edited && !sentViaBot, viewCount, dateText, statusType, textConstrainedSize)
+                            statusSizeAndApply = statusLayout(presentationData, edited && !sentViaBot, viewCount, dateText, statusType, textConstrainedSize)
                         }
                     default:
                         break
@@ -1017,7 +1017,7 @@ final class ChatMessageAttachedContentNode: ASDisplayNode {
         }
     }
     
-    func playMediaWithSound() -> (() -> Void, Bool, Bool, Bool, ASDisplayNode?)? {
+    func playMediaWithSound() -> ((Double?) -> Void, Bool, Bool, Bool, ASDisplayNode?)? {
         return self.contentImageNode?.playMediaWithSound()
     }
 }

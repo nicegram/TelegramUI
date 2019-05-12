@@ -103,7 +103,7 @@ private enum UserInfoEntry: ItemListNodeEntry {
     case startSecretChat(PresentationTheme, String)
     case sharedMedia(PresentationTheme, String)
     case notifications(PresentationTheme, String, String)
-    case groupsInCommon(PresentationTheme, String, Int32)
+    case groupsInCommon(PresentationTheme, String, String)
     case secretEncryptionKey(PresentationTheme, String, SecretChatKeyFingerprint)
     case botAddToGroup(PresentationTheme, String)
     case botShare(PresentationTheme, String)
@@ -376,7 +376,7 @@ private enum UserInfoEntry: ItemListNodeEntry {
                 if let peer = peer as? TelegramUser {
                     enabledEntitiyTypes = [.url, .mention, .hashtag, .phoneNumber, .external]
                 }
-                return ItemListTextWithLabelItem(theme: theme, label: text, text: value, enabledEntitiyTypes: enabledEntitiyTypes, multiline: true, sectionId: self.section, action: nil, longTapAction: {
+                return ItemListTextWithLabelItem(theme: theme, label: text, text: foldMultipleLineBreaks(value), enabledEntitiyTypes: enabledEntitiyTypes, multiline: true, sectionId: self.section, action: nil, longTapAction: {
                     arguments.displayAboutContextMenu(value)
                 }, linkItemAction: { action, itemLink in
                     arguments.aboutLinkAction(action, itemLink)
@@ -422,7 +422,7 @@ private enum UserInfoEntry: ItemListNodeEntry {
                     arguments.changeNotificationMuteSettings()
                 })
             case let .groupsInCommon(theme, text, value):
-                return ItemListDisclosureItem(theme: theme, title: text, label: "\(value)", sectionId: self.section, style: .plain, action: {
+                return ItemListDisclosureItem(theme: theme, title: text, label: value, sectionId: self.section, style: .plain, action: {
                     arguments.openGroupsInCommon()
                 })
             case let .secretEncryptionKey(theme, text, fingerprint):
@@ -684,7 +684,7 @@ private func userInfoEntries(account: Account, presentationData: PresentationDat
         }
         
         if let groupsInCommon = (cachedPeerData as? CachedUserData)?.commonGroupCount, groupsInCommon != 0 {
-            entries.append(UserInfoEntry.groupsInCommon(presentationData.theme, presentationData.strings.UserInfo_GroupsInCommon, groupsInCommon))
+            entries.append(UserInfoEntry.groupsInCommon(presentationData.theme, presentationData.strings.UserInfo_GroupsInCommon, presentationStringsFormattedNumber(groupsInCommon, presentationData.dateTimeFormat.groupingSeparator)))
         }
         
         if let peer = peer as? TelegramUser, let _ = peer.botInfo {
@@ -1160,7 +1160,7 @@ public func userInfoController(context: AccountContext, peerId: PeerId, mode: Us
         (controller?.navigationController as? NavigationController)?.pushViewController(value)
     }
     presentControllerImpl = { [weak controller] value, presentationArguments in
-        controller?.present(value, in: .window(.root), with: presentationArguments)
+        controller?.present(value, in: .window(.root), with: presentationArguments, blockInteraction: true)
     }
     dismissInputImpl = { [weak controller] in
         controller?.view.endEditing(true)

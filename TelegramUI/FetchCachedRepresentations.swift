@@ -7,6 +7,7 @@ import MobileCoreServices
 import Display
 import UIKit
 import AVFoundation
+import WebP
 
 public func fetchCachedResourceRepresentation(account: Account, resource: MediaResource, representation: CachedMediaResourceRepresentation) -> Signal<CachedMediaResourceRepresentationResult, NoError> {
     if let representation = representation as? CachedStickerAJpegRepresentation {
@@ -100,6 +101,10 @@ public func fetchCachedResourceRepresentation(account: Account, resource: MediaR
                 return .complete()
             }
         }
+    } else if let representation = representation as? CachedEmojiThumbnailRepresentation {
+        return fetchEmojiThumbnailRepresentation(account: account, resource: resource, representation: representation)
+    } else if let representation = representation as? CachedEmojiRepresentation {
+        return fetchEmojiRepresentation(account: account, resource: resource, representation: representation)
     }
     return .never()
 }
@@ -128,7 +133,7 @@ private func videoFirstFrameData(account: Account, resource: MediaResource, chun
 private func fetchCachedStickerAJpegRepresentation(account: Account, resource: MediaResource, resourceData: MediaResourceData, representation: CachedStickerAJpegRepresentation) -> Signal<CachedMediaResourceRepresentationResult, NoError> {
     return Signal({ subscriber in
         if let data = try? Data(contentsOf: URL(fileURLWithPath: resourceData.path), options: [.mappedIfSafe]) {
-            if let image = UIImage.convert(fromWebP: data) {
+            if let image = WebP.convert(fromWebP: data) {
                 var randomId: Int64 = 0
                 arc4random_buf(&randomId, 8)
                 let path = NSTemporaryDirectory() + "\(randomId)"
@@ -304,7 +309,7 @@ private func fetchCachedVideoFirstFrameRepresentation(account: Account, resource
                 }
                 
                 let _ = try? FileManager.default.removeItem(atPath: tempFilePath)
-            } catch (let _) {
+            } catch  _ {
                 let _ = try? FileManager.default.removeItem(atPath: tempFilePath)
                 subscriber.putError(.generic)
                 subscriber.putCompletion()
@@ -670,3 +675,199 @@ private func fetchCachedAlbumArtworkRepresentation(account: Account, resource: M
         return EmptyDisposable
     }) |> runOn(Queue.concurrentDefaultQueue())
 }
+
+private func fetchEmojiThumbnailRepresentation(account: Account, resource: MediaResource, representation: CachedEmojiThumbnailRepresentation) -> Signal<CachedMediaResourceRepresentationResult, NoError> {
+    guard let resource = resource as? EmojiThumbnailResource else {
+        return .never()
+    }
+    return Signal({ subscriber in
+        var randomId: Int64 = 0
+        arc4random_buf(&randomId, 8)
+        let path = NSTemporaryDirectory() + "\(randomId)"
+        let url = URL(fileURLWithPath: path)
+        
+        let nsString = (resource.emoji as NSString)
+        let font = Font.regular(52.0)
+        let stringAttributes = [NSAttributedStringKey.font: font]
+        var textSize = nsString.size(withAttributes: stringAttributes)
+        textSize = CGSize(width: ceil(textSize.width) + 1.0, height: ceil(textSize.height) + 1.0)
+        
+        let emojiSize = CGSize(width: 52.0, height: 52.0)
+        let context = DrawingContext(size: emojiSize, clear: true)
+        context.withFlippedContext { context in
+            let size = textSize
+            let bounds = CGRect(origin: CGPoint(), size: size)
+            
+            context.clear(CGRect(origin: CGPoint(), size: size))
+            context.textMatrix = .identity
+            
+            let path = CGMutablePath()
+            path.addRect(bounds.offsetBy(dx: -2.0 + UIScreenPixel, dy: -6.5))
+            let string = NSAttributedString(string: resource.emoji, font: font, textColor: .black)
+            let framesetter = CTFramesetterCreateWithAttributedString(string as CFAttributedString)
+            let frame = CTFramesetterCreateFrame(framesetter, CFRangeMake(0, string.length), path, nil)
+            CTFrameDraw(frame, context)
+        }
+        
+        let image = context.generateImage()!
+        let borderImage = generateTintedImage(image: image, color: .white)!
+        
+        let lineWidth: CGFloat = 1.0
+        let colorImage = generateImage(CGSize(width: emojiSize.width + lineWidth * 2.0, height: emojiSize.height + lineWidth * 2.0), contextGenerator: { size, context in
+            guard let image = image.cgImage else {
+                return
+            }
+            
+            context.clear(CGRect(origin: CGPoint(), size: size))
+            
+            let rect = CGRect(x: lineWidth, y: lineWidth, width: emojiSize.width, height: emojiSize.height)
+            if representation.outline {
+                let vectors: [CGPoint] = [CGPoint(x: -1.0, y: -1.0), CGPoint(x: -1.0, y: 0.0), CGPoint(x: -1.0, y: 1.0), CGPoint(x: 0.0, y: 1.0), CGPoint(x: 1.0, y: 1.0), CGPoint(x: 1.0, y: 0.0), CGPoint(x: 1.0, y: -1.0), CGPoint(x: 0.0, y: -1.0)]
+                if let borderImage = borderImage.cgImage {
+                    let step = UIScreenPixel
+                    for vector in vectors {
+                        for i in stride(from: step, through: lineWidth, by: step) {
+                            drawImage(context: context, image: borderImage, orientation: .up, in: rect.offsetBy(dx: vector.x * i, dy: vector.y * i))
+                        }
+                    }
+                    drawImage(context: context, image: image, orientation: .up, in: rect)
+                }
+            } else {
+                drawImage(context: context, image: image, orientation: .up, in: rect)
+            }
+        })!
+        
+        if let colorDestination = CGImageDestinationCreateWithURL(url as CFURL, kUTTypePNG, 1, nil) {
+            let options = NSMutableDictionary()
+            CGImageDestinationAddImage(colorDestination, colorImage.cgImage!, options as CFDictionary)
+            if CGImageDestinationFinalize(colorDestination) {
+                subscriber.putNext(CachedMediaResourceRepresentationResult(temporaryPath: path))
+            }
+        }
+        subscriber.putCompletion()
+        return EmptyDisposable
+    }) |> runOn(Queue.concurrentDefaultQueue())
+}
+
+private func emojiSpriteData(postbox: Postbox, resource: EmojiSpriteResource) -> Signal<(Data?), NoError> {
+    let spriteResource = postbox.mediaBox.resourceData(resource)
+    
+    let signal = spriteResource |> take(1) |> mapToSignal { maybeData -> Signal<(Data?), NoError> in
+        if maybeData.complete {
+            let loadedData: Data? = try? Data(contentsOf: URL(fileURLWithPath: maybeData.path), options: [])
+            return .single((loadedData))
+        } else {
+            let fetchedThumbnail = postbox.mediaBox.fetchedResource(resource, parameters: nil)
+            let thumbnail = Signal<Data?, NoError> { subscriber in
+                let fetchedDisposable = fetchedThumbnail.start()
+                let thumbnailDisposable = spriteResource.start(next: { next in
+                    subscriber.putNext(next.size == 0 ? nil : try? Data(contentsOf: URL(fileURLWithPath: next.path), options: []))
+                }, error: subscriber.putError, completed: subscriber.putCompletion)
+                
+                return ActionDisposable {
+                    fetchedDisposable.dispose()
+                    thumbnailDisposable.dispose()
+                }
+            }
+            
+            return thumbnail
+        }
+        } |> distinctUntilChanged(isEqual: { lhs, rhs in
+            if lhs == nil && rhs == nil {
+                return true
+            } else {
+                return false
+            }
+        })
+    
+    return signal
+}
+
+private func fetchEmojiRepresentation(account: Account, resource: MediaResource, representation: CachedEmojiRepresentation) -> Signal<CachedMediaResourceRepresentationResult, NoError> {
+    guard let resource = resource as? EmojiSpriteResource else {
+        return .never()
+    }
+    
+    return emojiSpriteData(postbox: account.postbox, resource: resource)
+    |> mapToSignal { data in
+        return Signal({ subscriber in
+            if let data = data, let image = UIImage(data: data) {
+                var randomId: Int64 = 0
+                arc4random_buf(&randomId, 8)
+                let path = NSTemporaryDirectory() + "\(randomId)"
+                let url = URL(fileURLWithPath: path)
+                
+                let size = CGSize(width: 160.0, height: 160.0)
+                let spacing: CGFloat = 16.0
+                let context = DrawingContext(size: size, clear: true)
+                context.withFlippedContext { context in
+                    let origin: CGPoint
+                    switch representation.tile {
+                        case 0:
+                            origin = CGPoint(x: 0.0, y: size.height * 2.0 + spacing * 2.0)
+                        case 1:
+                            origin = CGPoint(x: size.width + spacing, y: size.height * 2.0 + spacing * 2.0)
+                        case 2:
+                            origin = CGPoint(x: size.width * 2.0 + spacing * 2.0, y: size.height * 2.0 + spacing * 2.0)
+                        case 3:
+                            origin = CGPoint(x: 0.0, y: size.height + spacing)
+                        case 4:
+                            origin = CGPoint(x: size.width + spacing, y: size.height + spacing)
+                        case 5:
+                            origin = CGPoint(x: size.width * 2.0 + spacing * 2.0, y: size.height + spacing)
+                        case 6:
+                            origin = CGPoint(x: 0.0, y: 0.0)
+                        case 7:
+                            origin = CGPoint(x: size.width + spacing, y: 0.0)
+                        case 8:
+                            origin = CGPoint(x: size.width * 2.0 + spacing * 2.0, y: 0.0)
+                        default:
+                            origin = CGPoint()
+                    }
+
+                    context.draw(image.cgImage!, in: CGRect(origin: CGPoint(x: origin.x * -1.0, y: origin.y * -1.0), size: image.size))
+                }
+                
+                let emojiSize = CGSize(width: 52.0, height: 52.0)
+                let scaledImage = generateScaledImage(image: context.generateImage(), size: emojiSize, opaque: false)!
+                let borderImage = generateTintedImage(image: scaledImage, color: .white)!
+                
+                let lineWidth: CGFloat = 1.0
+                let colorImage = generateImage(CGSize(width: emojiSize.width + lineWidth * 2.0, height: emojiSize.height + lineWidth * 2.0), contextGenerator: { size, context in
+                    guard let image = scaledImage.cgImage else {
+                        return
+                    }
+                    
+                    context.clear(CGRect(origin: CGPoint(), size: size))
+                    
+                    let rect = CGRect(x: lineWidth, y: lineWidth, width: emojiSize.width, height: emojiSize.height)
+                    if representation.outline {
+                        let vectors: [CGPoint] = [CGPoint(x: -1.0, y: -1.0), CGPoint(x: -1.0, y: 0.0), CGPoint(x: -1.0, y: 1.0), CGPoint(x: 0.0, y: 1.0), CGPoint(x: 1.0, y: 1.0), CGPoint(x: 1.0, y: 0.0), CGPoint(x: 1.0, y: -1.0), CGPoint(x: 0.0, y: -1.0)]
+                        if let borderImage = borderImage.cgImage {
+                            let step = UIScreenPixel
+                            for vector in vectors {
+                                for i in stride(from: step, through: lineWidth, by: step) {
+                                    drawImage(context: context, image: borderImage, orientation: .up, in: rect.offsetBy(dx: vector.x * i, dy: vector.y * i))
+                                }
+                            }
+                            drawImage(context: context, image: image, orientation: .up, in: rect)
+                        }
+                    } else {
+                        drawImage(context: context, image: image, orientation: .up, in: rect)
+                    }
+                })!
+                
+                if let colorDestination = CGImageDestinationCreateWithURL(url as CFURL, kUTTypePNG, 1, nil) {
+                    let options = NSMutableDictionary()
+                    CGImageDestinationAddImage(colorDestination, colorImage.cgImage!, options as CFDictionary)
+                    if CGImageDestinationFinalize(colorDestination) {
+                        subscriber.putNext(CachedMediaResourceRepresentationResult(temporaryPath: path))
+                    }
+                }
+                subscriber.putCompletion()
+            }
+            return EmptyDisposable
+        }) |> runOn(Queue.concurrentDefaultQueue())
+    }
+}
+

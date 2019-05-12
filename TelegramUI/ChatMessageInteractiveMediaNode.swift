@@ -599,7 +599,7 @@ final class ChatMessageInteractiveMediaNode: ASDisplayNode {
                                     let mediaManager = context.sharedContext.mediaManager
                                     
                                     let streamVideo = isMediaStreamable(message: message, media: updatedVideoFile)
-                                    let videoContent = NativeVideoContent(id: .message(message.id, message.stableId, updatedVideoFile.fileId), fileReference: .message(message: MessageReference(message), media: updatedVideoFile), streamVideo: streamVideo ? .earlierStart : .none, enableSound: false, fetchAutomatically: false, onlyFullSizeThumbnail: (onlyFullSizeVideoThumbnail ?? false), continuePlayingWithoutSoundOnLostAudioSession: isInlinePlayableVideo, placeholderColor: emptyColor)
+                                    let videoContent = NativeVideoContent(id: .message(message.id, message.stableId, updatedVideoFile.fileId), fileReference: .message(message: MessageReference(message), media: updatedVideoFile), streamVideo: streamVideo ? .conservative : .none, enableSound: false, fetchAutomatically: false, onlyFullSizeThumbnail: (onlyFullSizeVideoThumbnail ?? false), continuePlayingWithoutSoundOnLostAudioSession: isInlinePlayableVideo, placeholderColor: emptyColor)
                                     let videoNode = UniversalVideoNode(postbox: context.account.postbox, audioSession: mediaManager.audioSession, manager: mediaManager.universalVideoManager, decoration: decoration, content: videoContent, priority: .embedded)
                                     videoNode.isUserInteractionEnabled = false
                                     videoNode.ownsContentNodeUpdated = { [weak self] owns in
@@ -785,6 +785,7 @@ final class ChatMessageInteractiveMediaNode: ASDisplayNode {
             }
         }
         
+        var game: TelegramMediaGame?
         var webpage: TelegramMediaWebpage?
         var invoice: TelegramMediaInvoice?
         for media in message.media {
@@ -792,6 +793,8 @@ final class ChatMessageInteractiveMediaNode: ASDisplayNode {
                 webpage = media
             } else if let media = media as? TelegramMediaInvoice {
                 invoice = media
+            } else if let media = media as? TelegramMediaGame {
+                game = media
             }
         }
         
@@ -904,6 +907,8 @@ final class ChatMessageInteractiveMediaNode: ASDisplayNode {
                 fetchStatus = actualFetchStatus
             }
             
+            let gifTitle = game != nil ? strings.Message_Game.uppercased() : strings.Message_Animation.uppercased()
+            
             switch fetchStatus {
                 case let .Fetching(_, progress):
                     let adjustedProgress = max(progress, 0.027)
@@ -922,10 +927,10 @@ final class ChatMessageInteractiveMediaNode: ASDisplayNode {
                             if let size = file.size {
                                  let sizeString = "\(dataSizeString(Int(Float(size) * progress), forceDecimal: true, decimalSeparator: decimalSeparator)) / \(dataSizeString(size, forceDecimal: true, decimalSeparator: decimalSeparator))"
                                 if file.isAnimated && (!automaticDownload || !automaticPlayback) {
-                                    badgeContent = .mediaDownload(backgroundColor: bubbleTheme.mediaDateAndStatusFillColor, foregroundColor: bubbleTheme.mediaDateAndStatusTextColor, duration: "GIF " + sizeString, size: nil, muted: false, active: false)
+                                    badgeContent = .mediaDownload(backgroundColor: bubbleTheme.mediaDateAndStatusFillColor, foregroundColor: bubbleTheme.mediaDateAndStatusTextColor, duration: "\(gifTitle) " + sizeString, size: nil, muted: false, active: false)
                                 }
                                 else if let duration = file.duration, !message.flags.contains(.Unsent) {
-                                    let durationString = file.isAnimated ? "GIF" : stringForDuration(playerDuration > 0 ? playerDuration : duration, position: playerPosition)
+                                    let durationString = file.isAnimated ? gifTitle : stringForDuration(playerDuration > 0 ? playerDuration : duration, position: playerPosition)
                                     if isMediaStreamable(message: message, media: file) {
                                         badgeContent = .mediaDownload(backgroundColor: bubbleTheme.mediaDateAndStatusFillColor, foregroundColor: bubbleTheme.mediaDateAndStatusTextColor, duration: durationString, size: active ? sizeString : nil, muted: muted, active: active)
                                         mediaDownloadState = .fetching(progress: automaticPlayback ? nil : adjustedProgress)
@@ -1019,17 +1024,17 @@ final class ChatMessageInteractiveMediaNode: ASDisplayNode {
                         }
                     }
                     if let file = media as? TelegramMediaFile, let duration = file.duration {
-                        let durationString = file.isAnimated ? "GIF" : stringForDuration(playerDuration > 0 ? playerDuration : duration, position: playerPosition)
+                        let durationString = file.isAnimated ? gifTitle : stringForDuration(playerDuration > 0 ? playerDuration : duration, position: playerPosition)
                         badgeContent = .mediaDownload(backgroundColor: bubbleTheme.mediaDateAndStatusFillColor, foregroundColor: bubbleTheme.mediaDateAndStatusTextColor, duration: durationString, size: nil, muted: muted, active: false)
                     }
                 case .Remote:
                     state = .download(bubbleTheme.mediaOverlayControlForegroundColor)
                     if let file = self.media as? TelegramMediaFile {
                         if file.isAnimated && (!automaticDownload || !automaticPlayback) {
-                            let string = "GIF " + dataSizeString(file.size ?? 0, decimalSeparator: decimalSeparator)
+                            let string = "\(gifTitle) " + dataSizeString(file.size ?? 0, decimalSeparator: decimalSeparator)
                             badgeContent = .mediaDownload(backgroundColor: bubbleTheme.mediaDateAndStatusFillColor, foregroundColor: bubbleTheme.mediaDateAndStatusTextColor, duration: string, size: nil, muted: false, active: false)
                         } else {
-                            let durationString = file.isAnimated ? "GIF" : stringForDuration(playerDuration > 0 ? playerDuration : (file.duration ?? 0), position: playerPosition)
+                            let durationString = file.isAnimated ? gifTitle : stringForDuration(playerDuration > 0 ? playerDuration : (file.duration ?? 0), position: playerPosition)
                             if wideLayout {
                                 if isMediaStreamable(message: message, media: file) {
                                     state = automaticPlayback ? .none : .play(bubbleTheme.mediaOverlayControlForegroundColor)
@@ -1210,7 +1215,7 @@ final class ChatMessageInteractiveMediaNode: ASDisplayNode {
         })
     }
     
-    func playMediaWithSound() -> (action: () -> Void, soundEnabled: Bool, isVideoMessage: Bool, isUnread: Bool, badgeNode: ASDisplayNode?)? {
+    func playMediaWithSound() -> (action: (Double?) -> Void, soundEnabled: Bool, isVideoMessage: Bool, isUnread: Bool, badgeNode: ASDisplayNode?)? {
         var isAnimated = false
         if let file = self.media as? TelegramMediaFile, file.isAnimated {
             isAnimated = true
@@ -1224,25 +1229,30 @@ final class ChatMessageInteractiveMediaNode: ASDisplayNode {
         }
         
         if let videoNode = self.videoNode, let context = self.context, (self.automaticPlayback ?? false) && !isAnimated {
-            return ({
-                let _ = (context.sharedContext.mediaManager.globalMediaPlayerState
-                |> take(1)
-                |> deliverOnMainQueue).start(next: { playlistStateAndType in
-                    var canPlay = true
-                    if let (_, state, _) = playlistStateAndType {
-                        switch state {
-                            case let .state(state):
-                                if case .playing = state.status.status {
-                                    canPlay = false
-                                }
-                            case .loading:
-                                break
+            return ({ timecode in
+                if let timecode = timecode {
+                    context.sharedContext.mediaManager.playlistControl(.playback(.pause))
+                    videoNode.playOnceWithSound(playAndRecord: false, seek: .timecode(timecode), actionAtEnd: actionAtEnd)
+                } else {
+                    let _ = (context.sharedContext.mediaManager.globalMediaPlayerState
+                    |> take(1)
+                    |> deliverOnMainQueue).start(next: { playlistStateAndType in
+                        var canPlay = true
+                        if let (_, state, _) = playlistStateAndType {
+                            switch state {
+                                case let .state(state):
+                                    if case .playing = state.status.status {
+                                        canPlay = false
+                                    }
+                                case .loading:
+                                    break
+                            }
                         }
-                    }
-                    if canPlay {
-                        videoNode.playOnceWithSound(playAndRecord: false, seekToStart: .none, actionAtEnd: actionAtEnd)
-                    }
-                })
+                        if canPlay {
+                            videoNode.playOnceWithSound(playAndRecord: false, seek: .none, actionAtEnd: actionAtEnd)
+                        }
+                    })
+                }
             }, (self.playerStatus?.soundEnabled ?? false), false, false, self.badgeNode)
         } else {
             return nil

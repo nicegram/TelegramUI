@@ -4,6 +4,8 @@ import Postbox
 import TelegramCore
 import SwiftSignalKit
 
+import TelegramUIPrivateModule
+
 public final class TelegramRootController: NavigationController {
     private let context: AccountContext
     
@@ -50,8 +52,8 @@ public final class TelegramRootController: NavigationController {
     
     public func addRootControllers(showCallsTab: Bool, showNonMutedChatsTab: Bool, showContactsTab: Bool) {
         let tabBarController = TabBarController(navigationBarPresentationData: NavigationBarPresentationData(presentationData: self.presentationData), theme: TabBarControllerTheme(rootControllerTheme: self.presentationData.theme))
-        let chatListController = ChatListController(context: self.context, groupId: nil, controlsHistoryPreload: true)
-        let nonMutedChatListController = ChatListController(context: self.context, groupId: nil, controlsHistoryPreload: true, onlyNonMuted: true)
+        let chatListController = ChatListController(context: self.context, groupId: .root, controlsHistoryPreload: true)
+        let nonMutedChatListController = ChatListController(context: self.context, groupId: .root, controlsHistoryPreload: true, onlyNonMuted: true)
         chatListController.tabBarItem.badgeValue = self.context.sharedContext.switchingData.chatListBadge
         nonMutedChatListController.tabBarItem.badgeValue = self.context.sharedContext.switchingData.chatListBadge
         let callListController = CallListController(context: self.context, mode: .tab)
@@ -89,6 +91,8 @@ public final class TelegramRootController: NavigationController {
         self.accountSettingsController = accountSettingsController
         self.rootTabController = tabBarController
         self.pushViewController(tabBarController, animated: false)
+        
+        
     }
     
     public func updateRootControllers(showCallsTab: Bool, showNonMutedChatsTab: Bool, showContactsTab: Bool) {

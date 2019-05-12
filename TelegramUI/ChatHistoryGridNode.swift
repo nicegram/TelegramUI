@@ -76,8 +76,6 @@ private func mappedInsertEntries(context: AccountContext, peerId: PeerId, contro
                 return GridNodeInsertItem(index: entry.index, item: GridMessageItem(theme: theme, strings: strings, context: context, message: message, controllerInteraction: controllerInteraction), previousIndex: entry.previousIndex)
             case .MessageGroupEntry:
                 return GridNodeInsertItem(index: entry.index, item: GridHoleItem(), previousIndex: entry.previousIndex)
-            case .HoleEntry:
-                return GridNodeInsertItem(index: entry.index, item: GridHoleItem(), previousIndex: entry.previousIndex)
             case .UnreadEntry:
                 assertionFailure()
                 return GridNodeInsertItem(index: entry.index, item: GridHoleItem(), previousIndex: entry.previousIndex)
@@ -94,8 +92,6 @@ private func mappedUpdateEntries(context: AccountContext, peerId: PeerId, contro
             case let .MessageEntry(message, _, _, _, _, _):
                 return GridNodeUpdateItem(index: entry.index, previousIndex: entry.previousIndex, item: GridMessageItem(theme: theme, strings: strings, context: context, message: message, controllerInteraction: controllerInteraction))
             case .MessageGroupEntry:
-                return GridNodeUpdateItem(index: entry.index, previousIndex: entry.previousIndex, item: GridHoleItem())
-            case .HoleEntry:
                 return GridNodeUpdateItem(index: entry.index, previousIndex: entry.previousIndex, item: GridHoleItem())
             case .UnreadEntry:
                 assertionFailure()
@@ -250,7 +246,7 @@ public final class ChatHistoryGridNode: GridNode, ChatHistoryNode {
         
         self.chatPresentationDataPromise.set(context.sharedContext.presentationData
         |> map { presentationData in
-            return ChatPresentationData(theme: ChatPresentationThemeData(theme: presentationData.theme, wallpaper: presentationData.chatWallpaper), fontSize: presentationData.fontSize, strings: presentationData.strings, dateTimeFormat: presentationData.dateTimeFormat, nameDisplayOrder: presentationData.nameDisplayOrder, disableAnimations: presentationData.disableAnimations)
+            return ChatPresentationData(theme: ChatPresentationThemeData(theme: presentationData.theme, wallpaper: presentationData.chatWallpaper), fontSize: presentationData.fontSize, strings: presentationData.strings, dateTimeFormat: presentationData.dateTimeFormat, nameDisplayOrder: presentationData.nameDisplayOrder, disableAnimations: presentationData.disableAnimations, largeEmoji: presentationData.largeEmoji)
         })
         
         self.floatingSections = true
@@ -284,7 +280,7 @@ public final class ChatHistoryGridNode: GridNode, ChatHistoryNode {
                         }
                     }
                     return .complete()
-                case let .HistoryView(view, type, scrollPosition, _, _, id):
+                case let .HistoryView(view, type, scrollPosition, flashIndicators, _, _, id):
                     let reason: ChatHistoryViewTransitionReason
                     var prepareOnMainQueue = false
                     switch type {
@@ -293,21 +289,21 @@ public final class ChatHistoryGridNode: GridNode, ChatHistoryNode {
                             prepareOnMainQueue = !fadeIn
                         case let .Generic(genericType):
                             switch genericType {
-                                case .InitialUnread:
+                                case .InitialUnread, .Initial:
                                     reason = ChatHistoryViewTransitionReason.Initial(fadeIn: false)
                                 case .Generic:
                                     reason = ChatHistoryViewTransitionReason.InteractiveChanges
                                 case .UpdateVisible:
                                     reason = ChatHistoryViewTransitionReason.Reload
-                                case let .FillHole(insertions, deletions):
-                                    reason = ChatHistoryViewTransitionReason.HoleChanges(filledHoleDirections: insertions, removeHoleDirections: deletions)
+                                case .FillHole:
+                                    reason = ChatHistoryViewTransitionReason.Reload
                             }
                     }
                     
                     let processedView = ChatHistoryView(originalView: view, filteredEntries: chatHistoryEntriesForView(location: .peer(peerId), view: view, includeUnreadEntry: false, includeEmptyEntry: false, includeChatInfoEntry: false, includeSearchEntry: false, reverse: false, groupMessages: false, selectedMessages: nil, presentationData: chatPresentationData, historyAppearsCleared: false), associatedData: ChatMessageItemAssociatedData(automaticDownloadPeerType: .channel, automaticDownloadNetworkType: .cellular, isRecentActions: false), id: id)
                     let previous = previousView.swap(processedView)
                     
-                    return preparedChatHistoryViewTransition(from: previous, to: processedView, reason: reason, reverse: false, chatLocation: .peer(peerId), controllerInteraction: controllerInteraction, scrollPosition: scrollPosition, initialData: nil, keyboardButtonsMessage: nil, cachedData: nil, cachedDataMessages: nil, readStateData: nil) |> map({ mappedChatHistoryViewListTransition(context: context, peerId: peerId, controllerInteraction: controllerInteraction, transition: $0, from: previous, presentationData: chatPresentationData) }) |> runOn(prepareOnMainQueue ? Queue.mainQueue() : messageViewQueue)
+                    return preparedChatHistoryViewTransition(from: previous, to: processedView, reason: reason, reverse: false, chatLocation: .peer(peerId), controllerInteraction: controllerInteraction, scrollPosition: scrollPosition, initialData: nil, keyboardButtonsMessage: nil, cachedData: nil, cachedDataMessages: nil, readStateData: nil, flashIndicators: flashIndicators) |> map({ mappedChatHistoryViewListTransition(context: context, peerId: peerId, controllerInteraction: controllerInteraction, transition: $0, from: previous, presentationData: chatPresentationData) }) |> runOn(prepareOnMainQueue ? Queue.mainQueue() : messageViewQueue)
             }
         }
         
@@ -451,10 +447,6 @@ public final class ChatHistoryGridNode: GridNode, ChatHistoryNode {
             let completion: (GridNodeDisplayedItemRange) -> Void = { [weak self] visibleRange in
                 if let strongSelf = self {
                     strongSelf.historyView = transition.historyView
-                    
-                    if let range = visibleRange.loadedRange {
-                        strongSelf.context.account.postbox.updateMessageHistoryViewVisibleRange(transition.historyView.originalView.id, earliestVisibleIndex: transition.historyView.filteredEntries[transition.historyView.filteredEntries.count - 1 - range.upperBound].index, latestVisibleIndex: transition.historyView.filteredEntries[transition.historyView.filteredEntries.count - 1 - range.lowerBound].index)
-                    }
                     
                     let loadState: ChatHistoryNodeLoadState
                     if let historyView = strongSelf.historyView {

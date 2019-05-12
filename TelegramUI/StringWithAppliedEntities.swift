@@ -38,7 +38,6 @@ func chatInputStateStringWithAppliedEntities(_ text: String, entities: [MessageT
     return string
 }
 
-
 func stringWithAppliedEntities(_ text: String, entities: [MessageTextEntity], baseColor: UIColor, linkColor: UIColor, baseFont: UIFont, linkFont: UIFont, boldFont: UIFont, italicFont: UIFont, fixedFont: UIFont, underlineLinks: Bool = true) -> NSAttributedString {
     var nsString: NSString?
     let string = NSMutableAttributedString(string: text, attributes: [NSAttributedStringKey.font: baseFont, NSAttributedStringKey.foregroundColor: baseColor])
@@ -164,6 +163,20 @@ func stringWithAppliedEntities(_ text: String, entities: [MessageTextEntity], ba
                 string.addAttribute(NSAttributedStringKey(rawValue: TelegramTextAttributes.BotCommand), value: nsString!.substring(with: range), range: range)
             case .Code, .Pre:
                 string.addAttribute(NSAttributedStringKey.font, value: fixedFont, range: range)
+            case let .Custom(type):
+                if type == ApplicationSpecificEntityType.Timecode {
+                    string.addAttribute(NSAttributedStringKey.foregroundColor, value: linkColor, range: range)
+                    if underlineLinks && underlineAllLinks {
+                        string.addAttribute(NSAttributedStringKey.underlineStyle, value: NSUnderlineStyle.styleSingle.rawValue as NSNumber, range: range)
+                    }
+                    if nsString == nil {
+                        nsString = text as NSString
+                    }
+                    let text = nsString!.substring(with: range)
+                    if let time = parseTimecodeString(text) {
+                        string.addAttribute(NSAttributedStringKey(rawValue: TelegramTextAttributes.Timecode), value: TelegramTimecode(time: time, text: text), range: range)
+                    }
+                }
             default:
                 break
         }

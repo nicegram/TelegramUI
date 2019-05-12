@@ -360,8 +360,26 @@ func refreshChatTextInputTypingAttributes(_ textNode: ASEditableTextNode, theme:
 
 func chatTextInputAddFormattingAttribute(_ state: ChatTextInputState, attribute: NSAttributedStringKey, value: Any = true) -> ChatTextInputState {
     if !state.selectionRange.isEmpty {
+        let nsRange = NSRange(location: state.selectionRange.lowerBound, length: state.selectionRange.count)
+        
+        var addAttribute = true
+        var attributesToRemove: [NSAttributedStringKey] = []
+        state.inputText.enumerateAttributes(in: nsRange, options: .longestEffectiveRangeNotRequired) { attributes, range, stop in
+            for (key, _) in attributes {
+                if key == attribute && range == nsRange {
+                    addAttribute = false
+                }
+                attributesToRemove.append(key)
+            }
+        }
+        
         let result = NSMutableAttributedString(attributedString: state.inputText)
-        result.addAttribute(attribute, value: value, range: NSRange(location: state.selectionRange.lowerBound, length: state.selectionRange.count))
+        for attribute in attributesToRemove {
+            result.removeAttribute(attribute, range: nsRange)
+        }
+        if addAttribute {
+            result.addAttribute(attribute, value: value, range: nsRange)
+        }
         return ChatTextInputState(inputText: result, selectionRange: state.selectionRange)
     } else {
         return state

@@ -73,6 +73,8 @@ enum ChatMessageBubbleContentTapAction {
     case wallpaper
     case call(PeerId)
     case openMessage
+    case timecode(Double, String)
+    case tooltip(String, ASDisplayNode?, CGRect?)
     case ignore
 }
 
@@ -147,7 +149,7 @@ class ChatMessageBubbleContentNode: ASDisplayNode {
     func updateAutomaticMediaDownloadSettings(_ settings: MediaAutoDownloadSettings) {
     }
         
-    func playMediaWithSound() -> (() -> Void, Bool, Bool, Bool, ASDisplayNode?)? {
+    func playMediaWithSound() -> ((Double?) -> Void, Bool, Bool, Bool, ASDisplayNode?)? {
         return nil
     }
     

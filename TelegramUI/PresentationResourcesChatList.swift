@@ -32,6 +32,34 @@ private func generateBadgeBackgroundImage(theme: PresentationTheme, active: Bool
     })?.stretchableImage(withLeftCapWidth: 10, topCapHeight: 10)
 }
 
+private func generateClockFrameImage(color: UIColor) -> UIImage? {
+    return generateImage(CGSize(width: 11.0, height: 11.0), contextGenerator: { size, context in
+        context.clear(CGRect(origin: CGPoint(), size: size))
+        context.setStrokeColor(color.cgColor)
+        context.setFillColor(color.cgColor)
+        let strokeWidth: CGFloat = 1.0
+        context.setLineWidth(strokeWidth)
+        context.strokeEllipse(in: CGRect(x: strokeWidth / 2.0, y: strokeWidth / 2.0, width: size.width - strokeWidth, height: size.height - strokeWidth))
+        context.fill(CGRect(x: (11.0 - strokeWidth) / 2.0, y: strokeWidth * 3.0, width: strokeWidth, height: 11.0 / 2.0 - strokeWidth * 3.0))
+    })
+}
+
+private func generateClockMinImage(color: UIColor) -> UIImage? {
+    return generateImage(CGSize(width: 11.0, height: 11.0), contextGenerator: { size, context in
+        context.clear(CGRect(origin: CGPoint(), size: size))
+        context.setFillColor(color.cgColor)
+        let strokeWidth: CGFloat = 1.0
+        context.fill(CGRect(x: (11.0 - strokeWidth) / 2.0, y: (11.0 - strokeWidth) / 2.0, width: 11.0 / 2.0 - strokeWidth, height: strokeWidth))
+    })
+}
+
+enum RecentStatusOnlineIconState {
+    case regular
+    case highlighted
+    case pinned
+    case panel
+}
+
 struct PresentationResourcesChatList {
     static func pendingImage(_ theme: PresentationTheme) -> UIImage? {
         return theme.image(PresentationResourceKey.chatListPending.rawValue, { theme in
@@ -60,27 +88,15 @@ struct PresentationResourcesChatList {
         })
     }
     
-    static func lockTopLockedImage(_ theme: PresentationTheme) -> UIImage? {
-        return theme.image(PresentationResourceKey.chatListLockTopLockedImage.rawValue, { theme in
-            return generateImage(CGSize(width: 7.0, height: 6.0), rotatedContext: { size, context in
-                context.clear(CGRect(origin: CGPoint(), size: size))
-                context.setFillColor(theme.rootController.navigationBar.accentTextColor.cgColor)
-                context.setStrokeColor(theme.rootController.navigationBar.accentTextColor.cgColor)
-                context.setLineWidth(1.5)
-                context.addPath(UIBezierPath(roundedRect: CGRect(x: 0.75, y: 0.75, width: 5.5, height: 12.0), cornerRadius: 2.5).cgPath)
-                context.strokePath()
-            })
+    static func clockFrameImage(_ theme: PresentationTheme) -> UIImage? {
+        return theme.image(PresentationResourceKey.chatListClockFrame.rawValue, { theme in
+            return generateClockFrameImage(color: theme.chatList.pendingIndicatorColor)
         })
     }
     
-    static func lockBottomLockedImage(_ theme: PresentationTheme) -> UIImage? {
-        return theme.image(PresentationResourceKey.chatListLockBottomLockedImage.rawValue, { theme in
-            return generateImage(CGSize(width: 10.0, height: 7.0), rotatedContext: { size, context in
-                context.clear(CGRect(origin: CGPoint(), size: size))
-                context.setFillColor(theme.rootController.navigationBar.accentTextColor.cgColor)
-                context.addPath(UIBezierPath(roundedRect: CGRect(x: 0.0, y: 0.0, width: 10.0, height: 7.0), cornerRadius: 1.33).cgPath)
-                context.fillPath()
-            })
+    static func clockMinImage(_ theme: PresentationTheme) -> UIImage? {
+        return theme.image(PresentationResourceKey.chatListClockMin.rawValue, { theme in
+            return generateClockMinImage(color: theme.chatList.pendingIndicatorColor)
         })
     }
     
@@ -102,23 +118,44 @@ struct PresentationResourcesChatList {
     
     static func lockBottomUnlockedImage(_ theme: PresentationTheme) -> UIImage? {
         return theme.image(PresentationResourceKey.chatListLockBottomUnlockedImage.rawValue, { theme in
-            return generateImage(CGSize(width: 10.0, height: 7.0), rotatedContext: { size, context in
+            return generateImage(CGSize(width: 10.0, height: 8.0), rotatedContext: { size, context in
                 context.clear(CGRect(origin: CGPoint(), size: size))
                 context.setFillColor(theme.rootController.navigationBar.primaryTextColor.cgColor)
-                context.addPath(UIBezierPath(roundedRect: CGRect(x: 0.0, y: 0.0, width: 10.0, height: 7.0), cornerRadius: 1.33).cgPath)
+                context.addPath(UIBezierPath(roundedRect: CGRect(x: 0.0, y: 0.0, width: 10.0, height: 8.0), cornerRadius: 1.5).cgPath)
                 context.fillPath()
             })
         })
     }
     
-    static func recentStatusOnlineIcon(_ theme: PresentationTheme) -> UIImage? {
-        return theme.image(PresentationResourceKey.chatListRecentStatusOnlineIcon.rawValue, { theme in
+    static func recentStatusOnlineIcon(_ theme: PresentationTheme, state: RecentStatusOnlineIconState) -> UIImage? {
+        let key: PresentationResourceKey
+        switch state {
+            case .regular:
+                key = PresentationResourceKey.chatListRecentStatusOnlineIcon
+            case .highlighted:
+                key = PresentationResourceKey.chatListRecentStatusOnlineHighlightedIcon
+            case .pinned:
+                key = PresentationResourceKey.chatListRecentStatusOnlinePinnedIcon
+            case .panel:
+                key = PresentationResourceKey.chatListRecentStatusOnlinePanelIcon
+        }
+        return theme.image(key.rawValue, { theme in
             return generateImage(CGSize(width: 14.0, height: 14.0), rotatedContext: { size, context in
                 let bounds = CGRect(origin: CGPoint(), size: size)
                 context.clear(bounds)
-                context.setFillColor(theme.chatList.backgroundColor.cgColor)
+                switch state {
+                    case .regular:
+                        context.setFillColor(theme.chatList.backgroundColor.cgColor)
+                    case .highlighted:
+                        context.setFillColor(theme.chatList.itemHighlightedBackgroundColor.cgColor)
+                    case .pinned:
+                        context.setFillColor(theme.chatList.pinnedItemBackgroundColor.cgColor)
+                    case .panel:
+                        context.setFillColor(theme.actionSheet.itemBackgroundColor.withAlphaComponent(1.0).cgColor)
+                }
+                
                 context.fillEllipse(in: bounds)
-                context.setFillColor(theme.chatList.unreadBadgeActiveBackgroundColor.cgColor)
+                context.setFillColor(theme.chatList.onlineDotColor.cgColor)
                 context.fillEllipse(in: bounds.insetBy(dx: 2.0, dy: 2.0))
             })
         })
@@ -139,6 +176,12 @@ struct PresentationResourcesChatList {
     static func badgeBackgroundMention(_ theme: PresentationTheme) -> UIImage? {
         return theme.image(PresentationResourceKey.chatListBadgeBackgroundMention.rawValue, { theme in
             return generateBadgeBackgroundImage(theme: theme, active: true, icon: generateTintedImage(image: UIImage(bundleImageName: "Chat List/MentionBadgeIcon"), color: theme.chatList.unreadBadgeActiveTextColor))
+        })
+    }
+    
+    static func badgeBackgroundInactiveMention(_ theme: PresentationTheme) -> UIImage? {
+        return theme.image(PresentationResourceKey.chatListBadgeBackgroundInactiveMention.rawValue, { theme in
+            return generateBadgeBackgroundImage(theme: theme, active: false, icon: generateTintedImage(image: UIImage(bundleImageName: "Chat List/MentionBadgeIcon"), color: theme.chatList.unreadBadgeInactiveTextColor))
         })
     }
     

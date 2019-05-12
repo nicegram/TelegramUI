@@ -68,7 +68,6 @@ private final class StickerAnimationNode : ASDisplayNode {
 class ChatMessageAnimatedStickerItemNode: ChatMessageItemView {
     let imageNode: TransformImageNode
     private let animationNode: StickerAnimationNode
-    var progressNode: RadialProgressNode?
     
     private var swipeToReplyNode: ChatMessageSwipeToReplyNode?
     private var swipeToReplyFeedback: HapticFeedback?
@@ -142,7 +141,7 @@ class ChatMessageAnimatedStickerItemNode: ChatMessageItemView {
         for media in item.message.media {
             if let telegramFile = media as? TelegramMediaFile {
                 if self.telegramFile != telegramFile {
-                    let signal = chatMessageAnimatedStickerDatas(postbox: item.context.account.postbox, fileReference: FileMediaReference.message(message: MessageReference(item.message), media: telegramFile), synchronousLoad: false)
+                    let signal = chatMessageAnimationData(postbox: item.context.account.postbox, fileReference: FileMediaReference.message(message: MessageReference(item.message), media: telegramFile), synchronousLoad: false)
                     |> mapToSignal { data, completed -> Signal<Data, NoError> in
                         if completed, let data = data {
                             return .single(data)
@@ -189,23 +188,23 @@ class ChatMessageAnimatedStickerItemNode: ChatMessageItemView {
             var hasAvatar = false
             
             switch item.chatLocation {
-            case let .peer(peerId):
-                if peerId != item.context.account.peerId {
-                    if peerId.isGroupOrChannel && item.message.author != nil {
-                        var isBroadcastChannel = false
-                        if let peer = item.message.peers[item.message.id.peerId] as? TelegramChannel, case .broadcast = peer.info {
-                            isBroadcastChannel = true
+                case let .peer(peerId):
+                    if peerId != item.context.account.peerId {
+                        if peerId.isGroupOrChannel && item.message.author != nil {
+                            var isBroadcastChannel = false
+                            if let peer = item.message.peers[item.message.id.peerId] as? TelegramChannel, case .broadcast = peer.info {
+                                isBroadcastChannel = true
+                            }
+                            
+                            if !isBroadcastChannel {
+                                hasAvatar = true
+                            }
                         }
-                        
-                        if !isBroadcastChannel {
-                            hasAvatar = true
-                        }
+                    } else if incoming {
+                        hasAvatar = true
                     }
-                } else if incoming {
-                    hasAvatar = true
-                }
-            case .group:
-                hasAvatar = true
+                /*case .group:
+                    hasAvatar = true*/
             }
             
             if hasAvatar {
@@ -297,7 +296,7 @@ class ChatMessageAnimatedStickerItemNode: ChatMessageItemView {
             
             let dateText = stringForMessageTimestampStatus(message: item.message, dateTimeFormat: item.presentationData.dateTimeFormat, nameDisplayOrder: item.presentationData.nameDisplayOrder, strings: item.presentationData.strings, format: .minimal)
             
-            let (dateAndStatusSize, dateAndStatusApply) = makeDateAndStatusLayout(item.presentationData.theme, item.presentationData.strings, edited && !sentViaBot, viewCount, dateText, statusType, CGSize(width: params.width, height: CGFloat.greatestFiniteMagnitude))
+            let (dateAndStatusSize, dateAndStatusApply) = makeDateAndStatusLayout(item.presentationData, edited && !sentViaBot, viewCount, dateText, statusType, CGSize(width: params.width, height: CGFloat.greatestFiniteMagnitude))
             
             var replyInfoApply: (CGSize, () -> ChatMessageReplyInfoNode)?
             var updatedReplyBackgroundNode: ASImageNode?
@@ -355,7 +354,6 @@ class ChatMessageAnimatedStickerItemNode: ChatMessageItemView {
                     
                     strongSelf.imageNode.frame = updatedImageFrame
                     strongSelf.animationNode.frame = updatedImageFrame
-                    strongSelf.progressNode?.position = strongSelf.imageNode.position
                     imageApply()
                     
                     if let updatedShareButtonNode = updatedShareButtonNode {
@@ -431,6 +429,13 @@ class ChatMessageAnimatedStickerItemNode: ChatMessageItemView {
                             if item.effectiveAuthorId?.namespace == Namespaces.Peer.Empty {
                                 item.controllerInteraction.displayMessageTooltip(item.content.firstMessage.id,  item.presentationData.strings.Conversation_ForwardAuthorHiddenTooltip, self, avatarNode.frame)
                             } else {
+                                if let channel = item.content.firstMessage.forwardInfo?.author as? TelegramChannel, channel.username == nil {
+                                    if case .member = channel.participationStatus {
+                                    } else {
+                                        item.controllerInteraction.displayMessageTooltip(item.message.id, item.presentationData.strings.Conversation_PrivateChannelTooltip, self, avatarNode.frame)
+                                        return
+                                    }
+                                }
                                 item.controllerInteraction.openPeer(item.effectiveAuthorId ?? author.id, navigate, item.message)
                             }
                         }

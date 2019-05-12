@@ -53,9 +53,8 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
     case showContactsTab(PresentationTheme, String, Bool)
     
     case chatScreenHeader(PresentationTheme, String)
-    case showBigEmojis(PresentationTheme, String, Bool)
-    case transparentEmojisBubble(PresentationTheme, String, Bool)
-    case transparentEmojisBubbleNotice(PresentationTheme, String)
+    
+    case animatedStickers(PresentationTheme, String, Bool)
     
     var section: ItemListSectionId {
         switch self {
@@ -65,7 +64,7 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
             return niceFeaturesControllerSection.chatsList.rawValue
         case .tabsHeader, .showContactsTab:
             return niceFeaturesControllerSection.tabs.rawValue
-        case .chatScreenHeader, .showBigEmojis, .transparentEmojisBubble, .transparentEmojisBubbleNotice:
+        case .chatScreenHeader, .animatedStickers:
             return niceFeaturesControllerSection.chatScreen.rawValue
         }
         
@@ -89,12 +88,8 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
             return .index(6)
         case .chatScreenHeader:
             return .index(7)
-        case .showBigEmojis:
+        case .animatedStickers:
             return .index(8)
-        case .transparentEmojisBubble:
-            return .index(9)
-        case .transparentEmojisBubbleNotice:
-            return .index(10)
         }
     }
     
@@ -156,22 +151,8 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
                 return false
             }
             
-        case let .showBigEmojis(lhsTheme, lhsText, lhsValue):
-            if case let .showBigEmojis(rhsTheme, rhsText, rhsValue) = rhs, lhsTheme === rhsTheme, lhsText == rhsText, lhsValue == rhsValue {
-                return true
-            } else {
-                return false
-            }
-            
-        case let .transparentEmojisBubble(lhsTheme, lhsText, lhsValue):
-            if case let .transparentEmojisBubble(rhsTheme, rhsText, rhsValue) = rhs, lhsTheme === rhsTheme, lhsText == rhsText, lhsValue == rhsValue {
-                return true
-            } else {
-                return false
-            }
-            
-        case let .transparentEmojisBubbleNotice(lhsTheme, lhsText):
-            if case let .transparentEmojisBubbleNotice(rhsTheme, rhsText) = rhs, lhsTheme === rhsTheme, lhsText == rhsText {
+        case let .animatedStickers(lhsTheme, lhsText, lhsValue):
+            if case let .animatedStickers(rhsTheme, rhsText, rhsValue) = rhs, lhsTheme === rhsTheme, lhsText == rhsText, lhsValue == rhsValue {
                 return true
             } else {
                 return false
@@ -237,21 +218,7 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
             default:
                 return true
             }
-        case .showBigEmojis:
-            switch rhs {
-            case .messageNotificationsHeader, .pinnedMessageNotification, .chatsListHeader, .workmode, .workmodeNotice, .tabsHeader, .showContactsTab, .chatScreenHeader, .showBigEmojis:
-                return false
-            default:
-                return true
-            }
-        case .transparentEmojisBubble:
-            switch rhs {
-            case .messageNotificationsHeader, .pinnedMessageNotification, .chatsListHeader, .workmode, .workmodeNotice, .tabsHeader, .showContactsTab, .chatScreenHeader, .showBigEmojis, .transparentEmojisBubble:
-                return false
-            default:
-                return true
-            }
-        case .transparentEmojisBubbleNotice:
+        case animatedStickers:
             return false
         }
     }
@@ -280,16 +247,10 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
             })
         case let .chatScreenHeader(theme, text):
             return ItemListSectionHeaderItem(theme: theme, text: text, sectionId: self.section)
-        case let .showBigEmojis(theme, text, value):
+        case let .animatedStickers(theme, text, value):
             return ItemListSwitchItem(theme: theme, title: text, value: value, enabled: true, sectionId: self.section, style: .blocks, updated: { value in
-                arguments.toggleBigEmojis(value)
+                GlobalExperimentalSettings.animatedStickers = value
             })
-        case let .transparentEmojisBubble(theme, text, value):
-            return ItemListSwitchItem(theme: theme, title: text, value: value, enabled: true, sectionId: self.section, style: .blocks, updated: { value in
-                arguments.toggleTransparentEmojisBubble(value)
-            })
-        case let .transparentEmojisBubbleNotice(theme, text):
-            return ItemListTextItem(theme: theme, text: .plain(text), sectionId: self.section)
         }
     }
     
@@ -314,9 +275,9 @@ private func niceFeaturesControllerEntries(niceSettings: NiceSettings, presentat
     entries.append(.tabsHeader(presentationData.theme, "TABS SETTINGS"))
     entries.append(.showContactsTab(presentationData.theme, "Show Contacts Tab", niceSettings.showContactsTab))
     entries.append(.chatScreenHeader(presentationData.theme, "CHAT SCREEN SETTINGS"))
-    entries.append(.showBigEmojis(presentationData.theme, "Show Big Emojis", niceSettings.bigEmojis))
-    entries.append(.transparentEmojisBubble(presentationData.theme, "Transparent Emojis Bubble", niceSettings.transparentEmojisBubble))
-    entries.append(.transparentEmojisBubbleNotice(presentationData.theme, "Looks like emojis in iMessage. Removes bubble for emoji-only messages."))
+    entries.append(.animatedStickers(presentationData.theme, "Animated Stickers", GlobalExperimentalSettings.animatedStickers))
+    // entries.append(.transparentEmojisBubble(presentationData.theme, "Transparent Emojis Bubble", niceSettings.transparentEmojisBubble))
+    // entries.append(.transparentEmojisBubbleNotice(presentationData.theme, "Looks like emojis in iMessage. Removes bubble for emoji-only messages."))
     
     return entries
 }

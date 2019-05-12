@@ -22,9 +22,9 @@ public enum ChatMessageItemContent: Sequence {
     var index: MessageIndex {
         switch self {
             case let .message(message, _, _, _):
-                return MessageIndex(message)
+                return message.index
             case let .group(messages):
-                return MessageIndex(messages[0].0)
+                return messages[0].0.index
         }
     }
     
@@ -279,9 +279,9 @@ public final class ChatMessageItem: ListViewItem, CustomStringConvertible {
                     effectiveAuthor = content.firstMessage.author
                     displayAuthorInfo = incoming && peerId.isGroupOrChannel && effectiveAuthor != nil
                 }
-            case .group:
+            /*case .group:
                 effectiveAuthor = content.firstMessage.author
-                displayAuthorInfo = incoming && effectiveAuthor != nil
+                displayAuthorInfo = incoming && effectiveAuthor != nil*/
         }
         
         self.effectiveAuthorId = effectiveAuthor?.id
@@ -325,9 +325,9 @@ public final class ChatMessageItem: ListViewItem, CustomStringConvertible {
     public func nodeConfiguredForParams(async: @escaping (@escaping () -> Void) -> Void, params: ListViewItemLayoutParams, synchronousLoads: Bool, previousItem: ListViewItem?, nextItem: ListViewItem?, completion: @escaping (ListViewItemNode, @escaping () -> (Signal<Void, NoError>?, (ListViewItemApply) -> Void)) -> Void) {
         var viewClassName: AnyClass = ChatMessageBubbleItemNode.self
         
-        loop: for media in message.media {
+        loop: for media in self.message.media {
             if let telegramFile = media as? TelegramMediaFile {
-                if GlobalExperimentalSettings.animatedStickers && telegramFile.fileName == "animation.json" {
+                if GlobalExperimentalSettings.animatedStickers && (telegramFile.fileName == "animation.json" || (telegramFile.fileName?.contains("tg_secret_sticker") ?? false && String(telegramFile.fileName?.suffix(5) ?? "") == ".json")) {
                     viewClassName = ChatMessageAnimatedStickerItemNode.self
                     break loop
                 }
@@ -350,6 +350,10 @@ public final class ChatMessageItem: ListViewItem, CustomStringConvertible {
             } else if let _ = media as? TelegramMediaExpiredContent {
                 viewClassName = ChatMessageBubbleItemNode.self
             }
+        }
+        
+        if self.presentationData.largeEmoji && self.message.elligibleForLargeEmoji && viewClassName == ChatMessageBubbleItemNode.self {
+            viewClassName = ChatMessageStickerItemNode.self
         }
         
         let configure = {
@@ -440,6 +444,4 @@ public final class ChatMessageItem: ListViewItem, CustomStringConvertible {
     public var description: String {
         return "(ChatMessageItem id: \(self.message.id), text: \"\(self.message.text)\")"
     }
-    
-    
 }

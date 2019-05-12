@@ -147,7 +147,7 @@ class ChatMessageContactBubbleContentNode: ChatMessageBubbleContentNode {
                         sentViaBot = true
                     }
                 }
-                if let author = item.message.author as? TelegramUser, author.botInfo != nil {
+                if let author = item.message.author as? TelegramUser, author.botInfo != nil || author.flags.contains(.isSupport) {
                     sentViaBot = true
                 }
                 
@@ -175,7 +175,7 @@ class ChatMessageContactBubbleContentNode: ChatMessageBubbleContentNode {
                 var statusApply: ((Bool) -> Void)?
                 
                 if let statusType = statusType {
-                    let (size, apply) = statusLayout(item.presentationData.theme, item.presentationData.strings, edited && !sentViaBot, viewCount, dateText, statusType, CGSize(width: constrainedSize.width, height: CGFloat.greatestFiniteMagnitude))
+                    let (size, apply) = statusLayout(item.presentationData, edited && !sentViaBot, viewCount, dateText, statusType, CGSize(width: constrainedSize.width, height: CGFloat.greatestFiniteMagnitude))
                     statusSize = size
                     statusApply = apply
                 }

@@ -333,7 +333,7 @@ enum ChatListSearchEntry: Comparable, Identifiable {
                 }
             case let .message(lhsMessage, _, _):
                 if case let .message(rhsMessage, _, _) = rhs {
-                    return MessageIndex(lhsMessage) < MessageIndex(rhsMessage)
+                    return lhsMessage.index < rhsMessage.index
                 } else if case .addContact = rhs {
                     return true
                 } else {
@@ -446,7 +446,7 @@ enum ChatListSearchEntry: Comparable, Identifiable {
                     interaction.peerSelected(peer.peer)
                 })
             case let .message(message, readState, presentationData):
-                return ChatListItem(presentationData: presentationData, account: context.account, peerGroupId: nil, index: ChatListIndex(pinningIndex: nil, messageIndex: MessageIndex(message)), content: .peer(message: message, peer: RenderedPeer(message: message), combinedReadState: readState, notificationSettings: nil, summaryInfo: ChatListMessageTagSummaryInfo(), embeddedState: nil, inputActivities: nil, isAd: false, ignoreUnreadBadge: true), editing: false, hasActiveRevealControls: false, selected: false, header: enableHeaders ? ChatListSearchItemHeader(type: .messages, theme: presentationData.theme, strings: presentationData.strings, actionTitle: nil, action: nil) : nil, enableContextActions: false, interaction: interaction)
+                return ChatListItem(presentationData: presentationData, context: context, peerGroupId: .root, index: ChatListIndex(pinningIndex: nil, messageIndex: message.index), content: .peer(message: message, peer: RenderedPeer(message: message), combinedReadState: readState, notificationSettings: nil, presence: nil, summaryInfo: ChatListMessageTagSummaryInfo(), embeddedState: nil, inputActivities: nil, isAd: false, ignoreUnreadBadge: true), editing: false, hasActiveRevealControls: false, selected: false, header: enableHeaders ? ChatListSearchItemHeader(type: .messages, theme: presentationData.theme, strings: presentationData.strings, actionTitle: nil, action: nil) : nil, enableContextActions: false, hiddenOffset: false, interaction: interaction)
             case let .addContact(phoneNumber, theme, strings):
                 return ContactsAddItem(theme: theme, strings: strings, phoneNumber: phoneNumber, header: ChatListSearchItemHeader(type: .phoneNumber, theme: theme, strings: strings, actionTitle: nil, action: nil), action: {
                     interaction.addContact(phoneNumber)
@@ -568,7 +568,7 @@ final class ChatListSearchContainerNode: SearchDisplayControllerContentNode {
     
     private let filter: ChatListNodePeersFilter
     
-    init(context: AccountContext, filter: ChatListNodePeersFilter, groupId: PeerGroupId?, openPeer: @escaping (Peer, Bool) -> Void, openRecentPeerOptions: @escaping (Peer) -> Void, openMessage: @escaping (Peer, MessageId) -> Void, addContact: ((String) -> Void)?) {
+    init(context: AccountContext, filter: ChatListNodePeersFilter, groupId: PeerGroupId, openPeer: @escaping (Peer, Bool) -> Void, openRecentPeerOptions: @escaping (Peer) -> Void, openMessage: @escaping (Peer, MessageId) -> Void, addContact: ((String) -> Void)?) {
         self.context = context
         self.filter = filter
         self.dimNode = ASDisplayNode()
@@ -626,7 +626,7 @@ final class ChatListSearchContainerNode: SearchDisplayControllerContentNode {
                 guard let last = previous.result.messages.last else {
                     return (previous, false)
                 }
-                return (ChatListSearchMessagesContext(result: previous.result, loadMoreIndex: MessageIndex(last)), true)
+                return (ChatListSearchMessagesContext(result: previous.result, loadMoreIndex: last.index), true)
             }
         }
         self.recentListNode.isHidden = filter.contains(.excludeRecent)
@@ -641,7 +641,7 @@ final class ChatListSearchContainerNode: SearchDisplayControllerContentNode {
             let accountPeer = context.account.postbox.loadedPeerWithId(context.account.peerId)
             |> take(1)
             
-            let foundLocalPeers = context.account.postbox.searchPeers(query: query.lowercased(), groupId: groupId)
+            let foundLocalPeers = context.account.postbox.searchPeers(query: query.lowercased())
             |> mapToSignal { local -> Signal<([PeerView], [RenderedPeer]), NoError> in
                 return combineLatest(local.map { context.account.postbox.peerView(id: $0.peerId) }) |> map { views in
                     return (views, local)
@@ -671,18 +671,16 @@ final class ChatListSearchContainerNode: SearchDisplayControllerContentNode {
             }
             
             let foundRemotePeers: Signal<([FoundPeer], [FoundPeer], Bool), NoError>
-            if groupId == nil {
-                foundRemotePeers = (.single(([], [], true)) |> then(searchPeers(account: context.account, query: query) |> map { ($0.0, $0.1, false) }
-                |> delay(0.2, queue: Queue.concurrentDefaultQueue())))
-            } else {
-                foundRemotePeers = .single(([], [], false))
-            }
+            foundRemotePeers = (
+                .single(([], [], true))
+                |> then(
+                    searchPeers(account: context.account, query: query)
+                    |> map { ($0.0, $0.1, false) }
+                    |> delay(0.2, queue: Queue.concurrentDefaultQueue())
+                )
+            )
             let location: SearchMessagesLocation
-            if let groupId = groupId {
-                location = .group(groupId)
-            } else {
-                location = .general
-            }
+            location = .general
             
             updateSearchContext { _ in
                 return (nil, true)
@@ -693,7 +691,7 @@ final class ChatListSearchContainerNode: SearchDisplayControllerContentNode {
             } else {
                 let searchSignal = searchMessages(account: context.account, location: location, query: query, state: nil, limit: 50)
                 |> map { result, updatedState -> ChatListSearchMessagesResult in
-                    return ChatListSearchMessagesResult(query: query, messages: result.messages.sorted(by: { MessageIndex($0) > MessageIndex($1) }), readStates: result.readStates, hasMore: !result.completed, state: updatedState)
+                    return ChatListSearchMessagesResult(query: query, messages: result.messages.sorted(by: { $0.index > $1.index }), readStates: result.readStates, hasMore: !result.completed, state: updatedState)
                 }
                 
                 let loadMore = searchContext.get()
@@ -702,7 +700,7 @@ final class ChatListSearchContainerNode: SearchDisplayControllerContentNode {
                         if let _ = searchContext.loadMoreIndex {
                             return searchMessages(account: context.account, location: location, query: query, state: searchContext.result.state, limit: 80)
                             |> map { result, updatedState -> ChatListSearchMessagesResult in
-                                return ChatListSearchMessagesResult(query: query, messages: result.messages.sorted(by: { MessageIndex($0) > MessageIndex($1) }), readStates: result.readStates, hasMore: !result.completed, state: updatedState)
+                                return ChatListSearchMessagesResult(query: query, messages: result.messages.sorted(by: { $0.index > $1.index }), readStates: result.readStates, hasMore: !result.completed, state: updatedState)
                             }
                             |> mapToSignal { foundMessages -> Signal<(([Message], [PeerId: CombinedPeerReadState], Int32), Bool), NoError> in
                                 updateSearchContext { previous in
@@ -857,6 +855,7 @@ final class ChatListSearchContainerNode: SearchDisplayControllerContentNode {
         }, deletePeer: { _ in
         }, updatePeerGrouping: { _, _ in
         }, togglePeerMarkedUnread: { _, _ in
+        }, toggleArchivedFolderHiddenByDefault: {
         })
         
         let previousRecentItems = Atomic<[ChatListRecentEntry]?>(value: nil)
@@ -901,7 +900,7 @@ final class ChatListSearchContainerNode: SearchDisplayControllerContentNode {
         |> mapToSignal { hasRecentPeers, peers, presentationData, state -> Signal<[ChatListRecentEntry], NoError> in
             var entries: [ChatListRecentEntry] = []
             if !filter.contains(.onlyGroups) {
-                if groupId == nil, hasRecentPeers {
+                if hasRecentPeers {
                     entries.append(.topPeers([], presentationData.theme, presentationData.strings))
                 }
             }
@@ -1107,11 +1106,11 @@ final class ChatListSearchContainerNode: SearchDisplayControllerContentNode {
             case let .animated(animationDuration, animationCurve):
                 duration = animationDuration
                 switch animationCurve {
-                    case .easeInOut:
+                    case .easeInOut, .custom:
                         break
                     case .spring:
                         curve = 7
-                    }
+                }
         }
         
         let listViewCurve: ListViewAnimationCurve
@@ -1173,9 +1172,9 @@ final class ChatListSearchContainerNode: SearchDisplayControllerContentNode {
                 bounds = selectedItemNode.bounds
             }
             switch item.content {
-                case let .peer(message, peer, _, _, _, _, _, _, _):
+                case let .peer(message, peer, _, _, _, _, _, _, _, _):
                     return (selectedItemNode.view, bounds, message?.id ?? peer.peerId)
-                case let .groupReference(groupId, _, _, _):
+                case let .groupReference(groupId, _, _, _, _):
                     return (selectedItemNode.view, bounds, groupId)
             }
         }

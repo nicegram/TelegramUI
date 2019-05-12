@@ -39,7 +39,7 @@ private final class RadialProgressContentSpinnerNode: ASDisplayNode {
             self.setNeedsDisplay()
         }
     }
-
+    
     var progress: CGFloat? {
         didSet {
             self.pop_removeAnimation(forKey: "progress")
@@ -47,7 +47,7 @@ private final class RadialProgressContentSpinnerNode: ASDisplayNode {
                 self.pop_removeAnimation(forKey: "indefiniteProgress")
                 
                 let animation = POPBasicAnimation()
-                animation.property = POPAnimatableProperty.property(withName: "progress", initializer: { property in
+                animation.property = (POPAnimatableProperty.property(withName: "progress", initializer: { property in
                     property?.readBlock = { node, values in
                         values?.pointee = (node as! RadialProgressContentSpinnerNode).effectiveProgress
                     }
@@ -55,18 +55,25 @@ private final class RadialProgressContentSpinnerNode: ASDisplayNode {
                         (node as! RadialProgressContentSpinnerNode).effectiveProgress = values!.pointee
                     }
                     property?.threshold = 0.01
-                }) as! POPAnimatableProperty
+                }) as! POPAnimatableProperty)
+                
+                var duration = 0.2
+                let delta = max(0.0, progress - self.effectiveProgress)
+                if delta > 0.25 {
+                    duration += Double(min(0.45, 0.45 * ((delta - 0.25) * 5)))
+                }
+                
                 animation.fromValue = CGFloat(self.effectiveProgress) as NSNumber
                 animation.toValue = CGFloat(progress) as NSNumber
                 animation.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionLinear)
-                animation.duration = 0.2
+                animation.duration = duration
                 animation.completionBlock = { [weak self] _, _ in
                     self?.progressAnimationCompleted?()
                 }
                 self.pop_add(animation, forKey: "progress")
             } else if self.pop_animation(forKey: "indefiniteProgress") == nil {
                 let animation = POPBasicAnimation()
-                animation.property = POPAnimatableProperty.property(withName: "progress", initializer: { property in
+                animation.property = (POPAnimatableProperty.property(withName: "progress", initializer: { property in
                     property?.readBlock = { node, values in
                         values?.pointee = (node as! RadialProgressContentSpinnerNode).effectiveProgress
                     }
@@ -74,7 +81,7 @@ private final class RadialProgressContentSpinnerNode: ASDisplayNode {
                         (node as! RadialProgressContentSpinnerNode).effectiveProgress = values!.pointee
                     }
                     property?.threshold = 0.01
-                }) as! POPAnimatableProperty
+                }) as! POPAnimatableProperty)
                 animation.fromValue = CGFloat(0.0) as NSNumber
                 animation.toValue = CGFloat(2.0) as NSNumber
                 animation.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionLinear)

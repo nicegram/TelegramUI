@@ -261,13 +261,13 @@ final class ChatMessageInteractiveFileNode: ASDisplayNode {
                             sentViaBot = true
                         }
                     }
-                    if let author = message.author as? TelegramUser, author.botInfo != nil {
+                    if let author = message.author as? TelegramUser, author.botInfo != nil || author.flags.contains(.isSupport) {
                         sentViaBot = true
                     }
                     
                     let dateText = stringForMessageTimestampStatus(message: message, dateTimeFormat: presentationData.dateTimeFormat, nameDisplayOrder: presentationData.nameDisplayOrder, strings: presentationData.strings)
                     
-                    let (size, apply) = statusLayout(presentationData.theme, presentationData.strings, edited && !sentViaBot, viewCount, dateText, statusType, constrainedSize)
+                    let (size, apply) = statusLayout(presentationData, edited && !sentViaBot, viewCount, dateText, statusType, constrainedSize)
                     statusSize = size
                     statusApply = apply
                 }
@@ -504,7 +504,7 @@ final class ChatMessageInteractiveFileNode: ASDisplayNode {
                                 if strongSelf.consumableContentNode.image !== consumableContentIcon {
                                     strongSelf.consumableContentNode.image = consumableContentIcon
                                 }
-                                strongSelf.consumableContentNode.frame = CGRect(origin: CGPoint(x: descriptionFrame.maxX + 2.0, y: descriptionFrame.minY + 5.0), size: consumableContentIcon.size)
+                                strongSelf.consumableContentNode.frame = CGRect(origin: CGPoint(x: descriptionFrame.maxX + 5.0, y: descriptionFrame.minY + 5.0), size: consumableContentIcon.size)
                             } else if strongSelf.consumableContentNode.supernode != nil {
                                 strongSelf.consumableContentNode.removeFromSupernode()
                             }

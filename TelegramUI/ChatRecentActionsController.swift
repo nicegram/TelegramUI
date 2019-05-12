@@ -45,6 +45,7 @@ final class ChatRecentActionsController: TelegramController {
         }, reportMessages: { _ in
         }, deleteMessages: { _ in
         }, forwardSelectedMessages: {
+        }, forwardCurrentForwardMessages: {
         }, forwardMessages: { _ in
         }, cloudSelectedMessages: {
         }, cloudMessages: { _ in
@@ -95,6 +96,8 @@ final class ChatRecentActionsController: TelegramController {
         }, toggleSilentPost: {
         }, requestUnvoteInMessage: { _ in
         }, requestStopPollInMessage: { _ in
+        }, updateInputLanguage: { _ in
+        }, unarchiveChat: {
         }, statuses: nil,
            gotoPin: {
         }, dismissInput: {

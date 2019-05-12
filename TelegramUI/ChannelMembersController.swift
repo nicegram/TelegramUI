@@ -181,7 +181,7 @@ private enum ChannelMembersEntry: ItemListNodeEntry {
             case let .addMemberInfo(theme, text):
                 return ItemListTextItem(theme: theme, text: .plain(text), sectionId: self.section)
             case let .peerItem(_, theme, strings, dateTimeFormat, nameDisplayOrder, participant, editing, enabled):
-                return ItemListPeerItem(theme: theme, strings: strings, dateTimeFormat: dateTimeFormat, nameDisplayOrder: nameDisplayOrder, account: arguments.account, peer: participant.peer, presence: participant.presences[participant.peer.id], text: .presence, label: .none, editing: editing, switchValue: nil, enabled: enabled, sectionId: self.section, action: {
+                return ItemListPeerItem(theme: theme, strings: strings, dateTimeFormat: dateTimeFormat, nameDisplayOrder: nameDisplayOrder, account: arguments.account, peer: participant.peer, presence: participant.presences[participant.peer.id], text: .presence, label: .none, editing: editing, switchValue: nil, enabled: enabled, selectable: true, sectionId: self.section, action: {
                     arguments.openPeer(participant.peer)
                 }, setPeerIdWithRevealedOptions: { previousId, id in
                     arguments.setPeerIdWithRevealedOptions(previousId, id)
@@ -268,23 +268,27 @@ private func ChannelMembersControllerEntries(context: AccountContext, presentati
 
         
         var index: Int32 = 0
-        for participant in participants.sorted(by: { lhs, rhs in
-            let lhsInvitedAt: Int32
-            switch lhs.participant {
-                case .creator:
-                    lhsInvitedAt = Int32.min
-                case let .member(_, invitedAt, _, _):
-                    lhsInvitedAt = invitedAt
-            }
-            let rhsInvitedAt: Int32
-            switch rhs.participant {
-                case .creator:
-                    rhsInvitedAt = Int32.min
-                case let .member(_, invitedAt, _, _):
-                    rhsInvitedAt = invitedAt
-            }
-            return lhsInvitedAt < rhsInvitedAt
-        }) {
+        let sortedParticipants = participants
+        /*
+         participants.sorted(by: { lhs, rhs in
+         let lhsInvitedAt: Int32
+         switch lhs.participant {
+         case .creator:
+         lhsInvitedAt = Int32.min
+         case let .member(_, invitedAt, _, _):
+         lhsInvitedAt = invitedAt
+         }
+         let rhsInvitedAt: Int32
+         switch rhs.participant {
+         case .creator:
+         rhsInvitedAt = Int32.min
+         case let .member(_, invitedAt, _, _):
+         rhsInvitedAt = invitedAt
+         }
+         return lhsInvitedAt < rhsInvitedAt
+         })
+         */
+        for participant in sortedParticipants {
             var editable = true
             var canEditMembers = false
             if let peer = view.peers[view.peerId] as? TelegramChannel {
@@ -442,7 +446,7 @@ public func channelMembersController(context: AccountContext, peerId: PeerId) ->
             
             var searchItem: ItemListControllerSearch?
             if state.searchingMembers {
-                searchItem = ChannelMembersSearchItem(context: context, peerId: peerId, cancel: {
+                searchItem = ChannelMembersSearchItem(context: context, peerId: peerId, searchContext: nil, cancel: {
                     updateState { state in
                         return state.withUpdatedSearchingMembers(false)
                     }

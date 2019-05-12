@@ -286,7 +286,7 @@ private enum ChannelInfoEntry: ItemListNodeEntry {
                     arguments.tapAvatarAction()
                 }, context: arguments.avatarAndNameInfoContext, updatingImage: updatingAvatar)
             case let .about(theme, text, value):
-                return ItemListTextWithLabelItem(theme: theme, label: text, text: value, enabledEntitiyTypes: [.url, .mention, .hashtag], multiline: true, sectionId: self.section, action: nil, longTapAction: {
+                return ItemListTextWithLabelItem(theme: theme, label: text, text: foldMultipleLineBreaks(value), enabledEntitiyTypes: [.url, .mention, .hashtag], multiline: true, sectionId: self.section, action: nil, longTapAction: {
                     arguments.displayContextMenu(ChannelInfoEntryTag.about, value)
                 }, linkItemAction: { action, itemLink in
                     arguments.aboutLinkAction(action, itemLink)
@@ -469,13 +469,13 @@ private func channelInfoEntries(account: Account, presentationData: Presentation
             if canEditMembers {
                 if peer.adminRights != nil || peer.flags.contains(.isCreator) {
                     let adminCount = cachedChannelData.participantsSummary.adminCount ?? 0
-                    entries.append(.admins(theme: presentationData.theme, text: presentationData.strings.GroupInfo_Administrators, value: "\(adminCount == 0 ? "" : "\(adminCount)")"))
+                    entries.append(.admins(theme: presentationData.theme, text: presentationData.strings.GroupInfo_Administrators, value: "\(adminCount == 0 ? "" : "\(presentationStringsFormattedNumber(adminCount, presentationData.dateTimeFormat.groupingSeparator))")"))
                     
                     let memberCount = cachedChannelData.participantsSummary.memberCount ?? 0
-                    entries.append(.members(theme: presentationData.theme, text: presentationData.strings.Channel_Info_Subscribers, value: "\(memberCount == 0 ? "" : "\(memberCount)")"))
+                    entries.append(.members(theme: presentationData.theme, text: presentationData.strings.Channel_Info_Subscribers, value: "\(memberCount == 0 ? "" : "\(presentationStringsFormattedNumber(memberCount, presentationData.dateTimeFormat.groupingSeparator))")"))
                     
                     let bannedCount = cachedChannelData.participantsSummary.kickedCount ?? 0
-                    entries.append(.banned(theme: presentationData.theme, text: presentationData.strings.GroupRemoved_Title, value: "\(bannedCount == 0 ? "" : "\(bannedCount)")"))
+                    entries.append(.banned(theme: presentationData.theme, text: presentationData.strings.GroupRemoved_Title, value: "\(bannedCount == 0 ? "" : "\(presentationStringsFormattedNumber(bannedCount, presentationData.dateTimeFormat.groupingSeparator))")"))
                 }
             }
         }
@@ -851,6 +851,8 @@ public func channelInfoController(context: AccountContext, peerId: PeerId) -> Vi
         actionsDisposable.add(toggleShouldChannelMessagesSignatures(account: context.account, peerId: peerId, enabled: enabled).start())
     })
     
+    let hapticFeedback = HapticFeedback()
+    
     let globalNotificationsKey: PostboxViewKey = .preferences(keys: Set<ValueBoxKey>([PreferencesKeys.globalNotifications]))
     let signal = combineLatest(context.sharedContext.presentationData, statePromise.get(), context.account.viewTracker.peerView(peerId), context.account.postbox.combinedView(keys: [globalNotificationsKey]))
         |> map { presentationData, state, view, combinedView -> (ItemListControllerState, (ItemListNodeState<ChannelInfoEntry>, ChannelInfoEntry.ItemGenerationArguments)) in
@@ -901,13 +903,23 @@ public func channelInfoController(context: AccountContext, peerId: PeerId) -> Vi
                 } else {
                     rightNavigationButton = ItemListNavigationButton(content: .text(presentationData.strings.Common_Done), style: .bold, enabled: doneEnabled, action: {
                         var updateValues: (title: String?, description: String?) = (nil, nil)
+                        var failed = false
                         updateState { state in
                             updateValues = valuesRequiringUpdate(state: state, view: view)
                             if updateValues.0 != nil || updateValues.1 != nil {
+                                if (updateValues.description?.count ?? 0) > 255 {
+                                    failed = true
+                                    return state
+                                }
                                 return state.withUpdatedSavingData(true)
                             } else {
                                 return state.withUpdatedEditingState(nil)
                             }
+                        }
+                        
+                        guard !failed else {
+                            hapticFeedback.error()
+                            return
                         }
                         
                         let updateTitle: Signal<Void, Void>
@@ -967,7 +979,7 @@ public func channelInfoController(context: AccountContext, peerId: PeerId) -> Vi
         (controller?.navigationController as? NavigationController)?.pushViewController(value)
     }
     presentControllerImpl = { [weak controller] value, presentationArguments in
-        controller?.present(value, in: .window(.root), with: presentationArguments)
+        controller?.present(value, in: .window(.root), with: presentationArguments, blockInteraction: true)
     }
     removePeerChatImpl = { [weak controller] peer, deleteGloballyIfPossible in
         guard let controller = controller, let navigationController = controller.navigationController as? NavigationController else {

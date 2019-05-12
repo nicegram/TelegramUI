@@ -2901,13 +2901,13 @@ private func openInAppIconData(postbox: Postbox, appIcon: MediaResource) -> Sign
             
             return appIcon
         }
-        } |> distinctUntilChanged(isEqual: { lhs, rhs in
-            if lhs == nil && rhs == nil {
-                return true
-            } else {
-                return false
-            }
-        })
+    } |> distinctUntilChanged(isEqual: { lhs, rhs in
+        if lhs == nil && rhs == nil {
+            return true
+        } else {
+            return false
+        }
+    })
     
     return signal
 }

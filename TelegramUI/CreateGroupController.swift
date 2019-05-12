@@ -150,7 +150,7 @@ private enum CreateGroupEntry: ItemListNodeEntry {
                     arguments.changeProfilePhoto()
                 })
             case let .member(_, theme, strings, dateTimeFormat, nameDisplayOrder, peer, presence):
-                return ItemListPeerItem(theme: theme, strings: strings, dateTimeFormat: dateTimeFormat, nameDisplayOrder: nameDisplayOrder, account: arguments.account, peer: peer, presence: presence, text: .presence, label: .none, editing: ItemListPeerItemEditing(editable: false, editing: false, revealed: false), switchValue: nil, enabled: true, sectionId: self.section, action: nil, setPeerIdWithRevealedOptions: { _, _ in }, removePeer: { _ in })
+                return ItemListPeerItem(theme: theme, strings: strings, dateTimeFormat: dateTimeFormat, nameDisplayOrder: nameDisplayOrder, account: arguments.account, peer: peer, presence: presence, text: .presence, label: .none, editing: ItemListPeerItemEditing(editable: false, editing: false, revealed: false), switchValue: nil, enabled: true, selectable: true, sectionId: self.section, action: nil, setPeerIdWithRevealedOptions: { _, _ in }, removePeer: { _ in })
         }
     }
 }
@@ -278,6 +278,16 @@ public func createGroupController(context: AccountContext, peerIds: [PeerId]) ->
                     let controller = ChatController(context: context, chatLocation: .peer(peerId))
                     replaceControllerImpl?(controller)
                 }
+            }, error: { error in
+                let presentationData = context.sharedContext.currentPresentationData.with { $0 }
+                let text: String
+                switch error {
+                    case .privacy:
+                        text = presentationData.strings.Privacy_GroupsAndChannels_InviteToChannelMultipleError
+                    case .generic:
+                        text = presentationData.strings.Login_UnknownError
+                }
+                presentControllerImpl?(standardTextAlertController(theme: AlertControllerTheme(presentationTheme: presentationData.theme), title: nil, text: text, actions: [TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_OK, action: {})]), nil)
             }))
         }
     }, changeProfilePhoto: {

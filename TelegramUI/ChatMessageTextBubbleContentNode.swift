@@ -73,27 +73,6 @@ class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
         
         return { item, layoutConstants, _, _, _ in
             var contentProperties = ChatMessageBubbleContentProperties(hidesSimpleAuthorHeader: false, headerSpacing: 0.0, hidesBackground: .never, forceFullCorners: false, forceAlignment: .none)
-            var hideBubble = false
-            var niceSettings = NiceSettings.defaultSettings
-            
-            if item.message.text.containsOnlyEmoji {
-                let emojis = item.message.text.emojis
-                let niceSettingsManager = NiceSettingsManager()
-                niceSettings = niceSettingsManager.getSettings()
-                if (niceSettings.bigEmojis && niceSettings.transparentEmojisBubble){
-                    switch emojis.count {
-                    case 1, 2, 3:
-                        hideBubble = true
-                    default:
-                        hideBubble = false
-                        break
-                    }
-                    if (hideBubble){
-                        contentProperties = ChatMessageBubbleContentProperties(hidesSimpleAuthorHeader: false, headerSpacing: 0.0, hidesBackground: .always, forceFullCorners: false, forceAlignment: .none)
-                    }
-                }
-            }
-
             return (contentProperties, nil, CGFloat.greatestFiniteMagnitude, { constrainedSize, position in
                 let message = item.message
                 
@@ -122,7 +101,7 @@ class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                         sentViaBot = true
                     }
                 }
-                if let author = item.message.author as? TelegramUser, author.botInfo != nil {
+                if let author = item.message.author as? TelegramUser, author.botInfo != nil || author.flags.contains(.isSupport) {
                     sentViaBot = true
                 }
                 
@@ -150,7 +129,7 @@ class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                 var statusApply: ((Bool) -> Void)?
                 
                 if let statusType = statusType {
-                    let (size, apply) = statusLayout(item.presentationData.theme, item.presentationData.strings, edited && !sentViaBot, viewCount, dateText, statusType, textConstrainedSize)
+                    let (size, apply) = statusLayout(item.presentationData, edited && !sentViaBot, viewCount, dateText, statusType, textConstrainedSize)
                     statusSize = size
                     statusApply = apply
                 }
@@ -159,22 +138,38 @@ class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                 let attributedText: NSAttributedString
                 var messageEntities: [MessageTextEntity]?
                 
+                var mediaDuration: Double? = nil
                 var isUnsupportedMedia = false
                 for media in item.message.media {
-                    if let _ = media as? TelegramMediaUnsupported {
+                    if let file = media as? TelegramMediaFile, let duration = file.duration {
+                        mediaDuration = Double(duration)
+                    }
+                    else if media is TelegramMediaUnsupported {
                         isUnsupportedMedia = true
                     }
                 }
-                                
+                
                 if isUnsupportedMedia {
                     rawText = item.presentationData.strings.Conversation_UnsupportedMediaPlaceholder
                     messageEntities = [MessageTextEntity(range: 0..<rawText.count, type: .Italic)]
                 } else {
-                    rawText = item.message.text
+                    if item.message.isScam {
+                        rawText = "\(item.message.text)\n\n\(item.presentationData.strings.Conversation_ScamWarning)"
+                    } else {
+                        rawText = item.message.text
+                    }
                     for attribute in item.message.attributes {
                         if let attribute = attribute as? TextEntitiesMessageAttribute {
                             messageEntities = attribute.entities
-                            break
+                        } else if mediaDuration == nil, let attribute = attribute as? ReplyMessageAttribute {
+                            if let replyMessage = item.message.associatedMessages[attribute.messageId] {
+                                for media in replyMessage.media {
+                                    if let file = media as? TelegramMediaFile, let duration = file.duration {
+                                        mediaDuration = Double(duration)
+                                        break
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -186,8 +181,17 @@ class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                     entities = cached.entities
                 } else {
                     entities = messageEntities
+                    
+                    if entities == nil && mediaDuration != nil {
+                        entities = []
+                    }
+                    
                     if let entitiesValue = entities {
-                        if let result = addLocallyGeneratedEntities(rawText, enabledTypes: .all, entities: entitiesValue) {
+                        var enabledTypes: EnabledEntityTypes = .all
+                        if mediaDuration != nil {
+                            enabledTypes.insert(.timecode)
+                        }
+                        if let result = addLocallyGeneratedEntities(rawText, enabledTypes: enabledTypes, entities: entitiesValue, mediaDuration: mediaDuration) {
                             entities = result
                         }
                     } else {
@@ -214,26 +218,8 @@ class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                 
                 let bubbleTheme = item.presentationData.theme.theme.chat.bubble
                 
-                var textFont = item.presentationData.messageFont
-                var forceStatusNewline = false
-                if rawText.containsOnlyEmoji {
-                    if (niceSettings.bigEmojis){
-                        let emojis = rawText.emojis
-                        switch emojis.count {
-                        case 1:
-                            textFont = item.presentationData.messageEmojiFont1
-                            forceStatusNewline = true
-                        case 2:
-                            textFont = item.presentationData.messageEmojiFont2
-                            forceStatusNewline = true
-                        case 3:
-                            textFont = item.presentationData.messageEmojiFont3
-                            forceStatusNewline = true
-                        default:
-                            break
-                        }
-                    }
-                }
+                let textFont = item.presentationData.messageFont
+                let forceStatusNewline = false
                 
                 if let entities = entities {
                     attributedText = stringWithAppliedEntities(rawText, entities: entities, baseColor: incoming ? bubbleTheme.incomingPrimaryTextColor : bubbleTheme.outgoingPrimaryTextColor, linkColor: incoming ? bubbleTheme.incomingLinkTextColor : bubbleTheme.outgoingLinkTextColor, baseFont: textFont, linkFont: textFont, boldFont: item.presentationData.messageBoldFont, italicFont: item.presentationData.messageItalicFont, fixedFont: item.presentationData.messageFixedFont)
@@ -279,7 +265,10 @@ class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                     var adjustedStatusFrame: CGRect?
                     
                     if let statusFrame = statusFrame {
-                        if !forceStatusNewline || boundingWidth < statusFrame.width + textFrame.width {
+                        let centeredTextFrame = CGRect(origin: CGPoint(x: floor((boundingWidth - textFrame.size.width) / 2.0), y: 0.0), size: textFrame.size)
+                        let statusOverlapsCenteredText = CGRect(origin: CGPoint(), size: statusFrame.size).intersects(centeredTextFrame)
+                        
+                        if !forceStatusNewline || statusOverlapsCenteredText {
                             boundingSize = textFrameWithoutInsets.union(statusFrame).size
                             boundingSize.width += layoutConstants.text.bubbleInsets.left + layoutConstants.text.bubbleInsets.right
                             boundingSize.height += layoutConstants.text.bubbleInsets.top + layoutConstants.text.bubbleInsets.bottom
@@ -394,6 +383,8 @@ class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                 return .botCommand(botCommand)
             } else if let hashtag = attributes[NSAttributedStringKey(rawValue: TelegramTextAttributes.Hashtag)] as? TelegramHashtag {
                 return .hashtag(hashtag.peerName, hashtag.hashtag)
+            } else if let timecode = attributes[NSAttributedStringKey(rawValue: TelegramTextAttributes.Timecode)] as? TelegramTimecode {
+                return .timecode(timecode.time, timecode.text)
             } else {
                 return .none
             }
@@ -413,7 +404,8 @@ class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                         TelegramTextAttributes.PeerMention,
                         TelegramTextAttributes.PeerTextMention,
                         TelegramTextAttributes.BotCommand,
-                        TelegramTextAttributes.Hashtag
+                        TelegramTextAttributes.Hashtag,
+                        TelegramTextAttributes.Timecode
                     ]
                     for name in possibleNames {
                         if let _ = attributes[NSAttributedStringKey(rawValue: name)] {

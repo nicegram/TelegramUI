@@ -21,7 +21,6 @@ final class ChatTextInputMenu {
                         UIMenuController.shared.menuItems = []
                     case .general:
                         UIMenuController.shared.menuItems = []
-                        //UIMenuController.shared.menuItems = [UIMenuItem(title: "Format", action: Selector(("_showTextStyleOptions:")))]
                     case .format:
                         UIMenuController.shared.menuItems = [
                             UIMenuItem(title: self.stringBold, action: Selector(("formatAttributesBold:"))),

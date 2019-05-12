@@ -21,9 +21,9 @@ private extension CallListViewEntry {
             case let .hole(index):
                 return index
             case let .message(_, messages):
-                var lowest = MessageIndex(messages[0])
+                var lowest = messages[0].index
                 for i in 1 ..< messages.count {
-                    let index = MessageIndex(messages[i])
+                    let index = messages[i].index
                     if index < lowest {
                         lowest = index
                     }
@@ -37,9 +37,9 @@ private extension CallListViewEntry {
         case let .hole(index):
             return index
         case let .message(_, messages):
-            var highest = MessageIndex(messages[0])
+            var highest = messages[0].index
             for i in 1 ..< messages.count {
-                let index = MessageIndex(messages[i])
+                let index = messages[i].index
                 if index > highest {
                     highest = index
                 }
@@ -552,7 +552,7 @@ final class CallListControllerNode: ASDisplayNode {
             case let .animated(animationDuration, animationCurve):
                 duration = animationDuration
                 switch animationCurve {
-                    case .easeInOut:
+                    case .easeInOut, .custom:
                         break
                     case .spring:
                         curve = 7

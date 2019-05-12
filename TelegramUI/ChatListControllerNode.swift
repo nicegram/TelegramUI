@@ -4,6 +4,7 @@ import AsyncDisplayKit
 import Display
 import Postbox
 import TelegramCore
+import SwiftSignalKit
 
 private final class ChatListControllerNodeView: UITracingLayerView, PreviewingHostView {
     var previewingDelegate: PreviewingHostViewDelegate? {
@@ -17,9 +18,25 @@ private final class ChatListControllerNodeView: UITracingLayerView, PreviewingHo
     weak var controller: ChatListController?
 }
 
+private struct TestItem: Comparable, Identifiable {
+    var value: Int
+    var version: Int
+    
+    var stableId: Int {
+        return self.value
+    }
+    
+    static func <(lhs: TestItem, rhs: TestItem) -> Bool {
+        if lhs.version != rhs.version {
+            return lhs.version < rhs.version
+        }
+        return lhs.value < rhs.value
+    }
+}
+
 final class ChatListControllerNode: ASDisplayNode {
     private let context: AccountContext
-    private let groupId: PeerGroupId?
+    private let groupId: PeerGroupId
     private var presentationData: PresentationData
     
     private var chatListEmptyNode: ChatListEmptyNode?
@@ -28,26 +45,24 @@ final class ChatListControllerNode: ASDisplayNode {
     var navigationBar: NavigationBar?
     weak var controller: ChatListController?
     
+    var toolbar: Toolbar?
+    private var toolbarNode: ToolbarNode?
+    var toolbarActionSelected: ((ToolbarActionOption) -> Void)?
+    
     private(set) var searchDisplayController: SearchDisplayController?
     
-    private var containerLayout: (ContainerViewLayout, CGFloat)?
+    private var containerLayout: (ContainerViewLayout, CGFloat, CGFloat)?
     
     var requestDeactivateSearch: (() -> Void)?
     var requestOpenPeerFromSearch: ((Peer, Bool) -> Void)?
     var requestOpenRecentPeerOptions: ((Peer) -> Void)?
     var requestOpenMessageFromSearch: ((Peer, MessageId) -> Void)?
     var requestAddContact: ((String) -> Void)?
+    var dismissSelf: (() -> Void)?
     
-    /*override var accessibilityElements: [Any]? {
-        get {
-            var accessibilityElements: [Any] = []
-            addAccessibilityChildren(of: self.chatListNode, container: self.chatListNode, to: &accessibilityElements)
-            return accessibilityElements
-        } set(value) {
-        }
-    }*/
+    let debugListView = ListView()
     
-    init(context: AccountContext, groupId: PeerGroupId?, controlsHistoryPreload: Bool, presentationData: PresentationData, controller: ChatListController) {
+    init(context: AccountContext, groupId: PeerGroupId, controlsHistoryPreload: Bool, presentationData: PresentationData, controller: ChatListController) {
         self.context = context
         self.groupId = groupId
         self.presentationData = presentationData
@@ -78,13 +93,19 @@ final class ChatListControllerNode: ASDisplayNode {
             }
             switch isEmptyState {
                 case .empty(false):
-                    if strongSelf.chatListEmptyNode == nil {
+                    if case .group = strongSelf.groupId {
+                        strongSelf.dismissSelf?()
+                    } else if strongSelf.chatListEmptyNode == nil {
                         let chatListEmptyNode = ChatListEmptyNode(theme: strongSelf.presentationData.theme, strings: strongSelf.presentationData.strings)
                         strongSelf.chatListEmptyNode = chatListEmptyNode
                         strongSelf.insertSubnode(chatListEmptyNode, belowSubnode: strongSelf.chatListNode)
-                        if let (layout, navigationHeight) = strongSelf.containerLayout {
-                            strongSelf.containerLayoutUpdated(layout, navigationBarHeight: navigationHeight, transition: .immediate)
+                        if let (layout, navigationHeight, visualNavigationHeight) = strongSelf.containerLayout {
+                            strongSelf.containerLayoutUpdated(layout, navigationBarHeight: navigationHeight, visualNavigationHeight: visualNavigationHeight, transition: .immediate)
                         }
+                    }
+                case .notEmpty(false):
+                    if case .group = strongSelf.groupId {
+                        strongSelf.dismissSelf?()
                     }
                 default:
                     if let chatListEmptyNode = strongSelf.chatListEmptyNode {
@@ -100,8 +121,8 @@ final class ChatListControllerNode: ASDisplayNode {
                         let chatListEmptyIndicator = ActivityIndicator(type: .custom(strongSelf.presentationData.theme.list.itemAccentColor, 22.0, 1.0, false))
                         strongSelf.chatListEmptyIndicator = chatListEmptyIndicator
                         strongSelf.insertSubnode(chatListEmptyIndicator, belowSubnode: strongSelf.chatListNode)
-                        if let (layout, navigationHeight) = strongSelf.containerLayout {
-                            strongSelf.containerLayoutUpdated(layout, navigationBarHeight: navigationHeight, transition: .immediate)
+                        if let (layout, navigationHeight, visualNavigationHeight) = strongSelf.containerLayout {
+                            strongSelf.containerLayoutUpdated(layout, navigationBarHeight: navigationHeight, visualNavigationHeight: visualNavigationHeight, transition: .immediate)
                         }
                     }
                 default:
@@ -111,6 +132,8 @@ final class ChatListControllerNode: ASDisplayNode {
                     }
             }
         }
+        
+        self.addSubnode(self.debugListView)
     }
     
     override func didLoad() {
@@ -127,16 +150,63 @@ final class ChatListControllerNode: ASDisplayNode {
         self.chatListNode.updateThemeAndStrings(theme: self.presentationData.theme, strings: self.presentationData.strings, dateTimeFormat: self.presentationData.dateTimeFormat, nameSortOrder: self.presentationData.nameSortOrder, nameDisplayOrder: self.presentationData.nameDisplayOrder, disableAnimations: self.presentationData.disableAnimations)
         self.searchDisplayController?.updatePresentationData(presentationData)
         self.chatListEmptyNode?.updateThemeAndStrings(theme: self.presentationData.theme, strings: self.presentationData.strings)
+        
+        if let toolbarNode = self.toolbarNode {
+            toolbarNode.updateTheme(TabBarControllerTheme(rootControllerTheme: self.presentationData.theme))
+        }
     }
     
-    func containerLayoutUpdated(_ layout: ContainerViewLayout, navigationBarHeight: CGFloat, transition: ContainedViewLayoutTransition) {
-        self.containerLayout = (layout, navigationBarHeight)
+    func containerLayoutUpdated(_ layout: ContainerViewLayout, navigationBarHeight: CGFloat, visualNavigationHeight: CGFloat, transition: ContainedViewLayoutTransition) {
+        self.containerLayout = (layout, navigationBarHeight, visualNavigationHeight)
         
         var insets = layout.insets(options: [.input])
         insets.top += navigationBarHeight
         
         insets.left += layout.safeInsets.left
         insets.right += layout.safeInsets.right
+        
+        if let toolbar = self.toolbar {
+            var tabBarHeight: CGFloat
+            var options: ContainerViewLayoutInsetOptions = []
+            if layout.metrics.widthClass == .regular {
+                options.insert(.input)
+            }
+            let bottomInset: CGFloat = layout.insets(options: options).bottom
+            if !layout.safeInsets.left.isZero {
+                tabBarHeight = 34.0 + bottomInset
+                insets.bottom += 34.0
+            } else {
+                tabBarHeight = 49.0 + bottomInset
+                insets.bottom += 49.0
+            }
+            
+            let tabBarFrame = CGRect(origin: CGPoint(x: 0.0, y: layout.size.height - tabBarHeight), size: CGSize(width: layout.size.width, height: tabBarHeight))
+            
+            if let toolbarNode = self.toolbarNode {
+                transition.updateFrame(node: toolbarNode, frame: tabBarFrame)
+                toolbarNode.updateLayout(size: tabBarFrame.size, leftInset: layout.safeInsets.left, rightInset: layout.safeInsets.right,  bottomInset: bottomInset, toolbar: toolbar, transition: transition)
+            } else {
+                let toolbarNode = ToolbarNode(theme: TabBarControllerTheme(rootControllerTheme: self.presentationData.theme), displaySeparator: true, left: { [weak self] in
+                    self?.toolbarActionSelected?(.left)
+                }, right: { [weak self] in
+                    self?.toolbarActionSelected?(.right)
+                }, middle: { [weak self] in
+                    self?.toolbarActionSelected?(.middle)
+                })
+                toolbarNode.frame = tabBarFrame
+                toolbarNode.updateLayout(size: tabBarFrame.size, leftInset: layout.safeInsets.left, rightInset: layout.safeInsets.right, bottomInset: bottomInset, toolbar: toolbar, transition: .immediate)
+                self.addSubnode(toolbarNode)
+                self.toolbarNode = toolbarNode
+                if transition.isAnimated {
+                    toolbarNode.layer.animateAlpha(from: 0.0, to: 1.0, duration: 0.2)
+                }
+            }
+        } else if let toolbarNode = self.toolbarNode {
+            self.toolbarNode = nil
+            transition.updateAlpha(node: toolbarNode, alpha: 0.0, completion: { [weak toolbarNode] _ in
+                toolbarNode?.removeFromSupernode()
+            })
+        }
         
         self.chatListNode.bounds = CGRect(x: 0.0, y: 0.0, width: layout.size.width, height: layout.size.height)
         self.chatListNode.position = CGPoint(x: layout.size.width / 2.0, y: layout.size.height / 2.0)
@@ -149,7 +219,7 @@ final class ChatListControllerNode: ASDisplayNode {
             case let .animated(animationDuration, animationCurve):
                 duration = animationDuration
                 switch animationCurve {
-                    case .easeInOut:
+                    case .easeInOut, .custom:
                         break
                     case .spring:
                         curve = 7
@@ -165,6 +235,7 @@ final class ChatListControllerNode: ASDisplayNode {
         
         let updateSizeAndInsets = ListViewUpdateSizeAndInsets(size: layout.size, insets: insets, duration: duration, curve: listViewCurve)
         
+        self.chatListNode.visualInsets = UIEdgeInsets(top: visualNavigationHeight, left: 0.0, bottom: 0.0, right: 0.0)
         self.chatListNode.updateLayout(transition: transition, updateSizeAndInsets: updateSizeAndInsets)
         
         if let chatListEmptyNode = self.chatListEmptyNode {
@@ -184,7 +255,7 @@ final class ChatListControllerNode: ASDisplayNode {
     }
     
     func activateSearch(placeholderNode: SearchBarPlaceholderNode) {
-        guard let (containerLayout, navigationBarHeight) = self.containerLayout, let navigationBar = self.navigationBar, self.searchDisplayController == nil else {
+        guard let (containerLayout, navigationBarHeight, _) = self.containerLayout, let navigationBar = self.navigationBar, self.searchDisplayController == nil else {
             return
         }
         
@@ -224,6 +295,14 @@ final class ChatListControllerNode: ASDisplayNode {
             searchDisplayController.deactivate(placeholder: placeholderNode, animated: animated)
             self.searchDisplayController = nil
             self.chatListNode.accessibilityElementsHidden = false
+        }
+    }
+    
+    func playArchiveAnimation() {
+        self.chatListNode.forEachVisibleItemNode { node in
+            if let node = node as? ChatListItemNode {
+                node.playArchiveAnimation()
+            }
         }
     }
     

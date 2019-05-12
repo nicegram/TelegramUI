@@ -57,7 +57,30 @@ public func navigateToChatController(navigationController: NavigationController,
         if resolvedKeepStack {
             navigationController.pushViewController(controller, animated: animated, completion: completion)
         } else {
-            navigationController.replaceAllButRootController(controller, animated: animated, completion: completion)
+            let viewControllers = navigationController.viewControllers.filter({ $0 is ChatListController || $0 is TabBarController })
+            if viewControllers.isEmpty {
+                navigationController.replaceAllButRootController(controller, animated: animated, completion: completion)
+            } else {
+                navigationController.replaceControllersAndPush(controllers: viewControllers, controller: controller, animated: animated, completion: completion)
+            }
+        }
+    }
+    
+    navigationController.currentWindow?.forEachController { controller in
+        if let controller = controller as? NotificationContainerController {
+            controller.removeItems { item in
+                if let item = item as? ChatMessageNotificationItem {
+                    for message in item.messages {
+                        switch chatLocation {
+                            case let .peer(peerId):
+                                if message.id.peerId == peerId {
+                                    return true
+                                }
+                        }
+                    }
+                }
+                return false
+            }
         }
     }
 }

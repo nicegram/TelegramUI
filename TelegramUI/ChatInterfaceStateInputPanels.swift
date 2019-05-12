@@ -57,7 +57,7 @@ func inputPanelForChatPresentationIntefaceState(_ chatPresentationInterfaceState
     
     var displayInputTextPanel = false
     
-    if case .group = chatPresentationInterfaceState.chatLocation {
+    /*if case .group = chatPresentationInterfaceState.chatLocation {
         if chatPresentationInterfaceState.interfaceState.editMessage != nil {
             displayInputTextPanel = true
         } else {
@@ -72,7 +72,7 @@ func inputPanelForChatPresentationIntefaceState(_ chatPresentationInterfaceState
                 return panel
             }
         }
-    }
+    }*/
     
     if let peer = chatPresentationInterfaceState.renderedPeer?.peer {
         if let secretChat = peer as? TelegramSecretChat {
@@ -179,7 +179,9 @@ func inputPanelForChatPresentationIntefaceState(_ chatPresentationInterfaceState
         
         var displayBotStartPanel = false
         if let _ = chatPresentationInterfaceState.botStartPayload {
-            displayBotStartPanel = true
+            if let user = chatPresentationInterfaceState.renderedPeer?.peer as? TelegramUser, user.botInfo != nil {
+                displayBotStartPanel = true
+            }
         } else if let chatHistoryState = chatPresentationInterfaceState.chatHistoryState, case .loaded(true) = chatHistoryState {
             if let user = chatPresentationInterfaceState.renderedPeer?.peer as? TelegramUser, user.botInfo != nil {
                 displayBotStartPanel = true

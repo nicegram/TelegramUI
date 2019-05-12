@@ -84,16 +84,18 @@ final class ShareControllerPeerGridItem: GridItem {
     let theme: PresentationTheme
     let strings: PresentationStrings
     let peer: RenderedPeer
+    let presence: PeerPresence?
     let controllerInteraction: ShareControllerInteraction
     let search: Bool
     
     let section: GridSection?
     
-    init(account: Account, theme: PresentationTheme, strings: PresentationStrings, peer: RenderedPeer, controllerInteraction: ShareControllerInteraction, sectionTitle: String? = nil, search: Bool = false) {
+    init(account: Account, theme: PresentationTheme, strings: PresentationStrings, peer: RenderedPeer, presence: PeerPresence?, controllerInteraction: ShareControllerInteraction, sectionTitle: String? = nil, search: Bool = false) {
         self.account = account
         self.theme = theme
         self.strings = strings
         self.peer = peer
+        self.presence = presence
         self.controllerInteraction = controllerInteraction
         self.search = search
         
@@ -107,7 +109,7 @@ final class ShareControllerPeerGridItem: GridItem {
     func node(layout: GridNodeLayout, synchronousLoad: Bool) -> GridItemNode {
         let node = ShareControllerPeerGridItemNode()
         node.controllerInteraction = self.controllerInteraction
-        node.setup(account: self.account, theme: self.theme, strings: self.strings, peer: self.peer, search: self.search, synchronousLoad: synchronousLoad)
+        node.setup(account: self.account, theme: self.theme, strings: self.strings, peer: self.peer, presence: self.presence, search: self.search, synchronousLoad: synchronousLoad)
         return node
     }
     
@@ -117,7 +119,7 @@ final class ShareControllerPeerGridItem: GridItem {
             return
         }
         node.controllerInteraction = self.controllerInteraction
-        node.setup(account: self.account, theme: self.theme, strings: self.strings, peer: self.peer, search: self.search, synchronousLoad: false)
+        node.setup(account: self.account, theme: self.theme, strings: self.strings, peer: self.peer, presence: self.presence, search: self.search, synchronousLoad: false)
     }
 }
 
@@ -144,11 +146,21 @@ final class ShareControllerPeerGridItemNode: GridItemNode {
         self.addSubnode(self.peerNode)
     }
     
-    func setup(account: Account, theme: PresentationTheme, strings: PresentationStrings, peer: RenderedPeer, search: Bool, synchronousLoad: Bool) {
+    func setup(account: Account, theme: PresentationTheme, strings: PresentationStrings, peer: RenderedPeer, presence: PeerPresence?, search: Bool, synchronousLoad: Bool) {
         if self.currentState == nil || self.currentState!.0 !== account || self.currentState!.1 != peer {
             let itemTheme = SelectablePeerNodeTheme(textColor: theme.actionSheet.primaryTextColor, secretTextColor: theme.chatList.secretTitleColor, selectedTextColor: theme.actionSheet.controlAccentColor, checkBackgroundColor: theme.actionSheet.opaqueItemBackgroundColor, checkFillColor: theme.actionSheet.controlAccentColor, checkColor: theme.actionSheet.checkContentColor, avatarPlaceholderColor: theme.list.mediaPlaceholderColor)
+            
+            let timestamp = Int32(CFAbsoluteTimeGetCurrent() + NSTimeIntervalSince1970)
+            var online = false
+            if let peer = peer.peer as? TelegramUser, let presence = presence as? TelegramUserPresence, !isServicePeer(peer) && !peer.flags.contains(.isSupport) && peer.id != account.peerId  {
+                let relativeStatus = relativeUserPresenceStatus(presence, relativeTo: timestamp)
+                if case .online = relativeStatus {
+                    online = true
+                }
+            }
+            
             self.peerNode.theme = itemTheme
-            self.peerNode.setup(account: account, theme: theme, strings: strings, peer: peer, synchronousLoad: synchronousLoad)
+            self.peerNode.setup(account: account, theme: theme, strings: strings, peer: peer, online: online, synchronousLoad: synchronousLoad)
             self.currentState = (account, peer, search)
             self.setNeedsLayout()
         }

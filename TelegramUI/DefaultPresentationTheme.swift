@@ -3,7 +3,7 @@ import UIKit
 
 private func makeDefaultPresentationTheme(accentColor: UIColor, serviceBackgroundColor: UIColor, day: Bool) -> PresentationTheme {
     let destructiveColor: UIColor = UIColor(rgb: 0xff3b30)
-    let constructiveColor: UIColor = UIColor(rgb: 0x4cd964)
+    let constructiveColor: UIColor = UIColor(rgb: 0x00c900)
     let secretColor: UIColor = UIColor(rgb: 0x00B12C)
     
     let rootStatusBar = PresentationThemeRootNavigationStatusBar(
@@ -110,7 +110,8 @@ private func makeDefaultPresentationTheme(accentColor: UIColor, serviceBackgroun
             controlColor: UIColor(rgb: 0x96979d)
         ),
         mediaPlaceholderColor: UIColor(rgb: 0xe4e4e4),
-        scrollIndicatorColor: UIColor(white: 0.0, alpha: 0.3)
+        scrollIndicatorColor: UIColor(white: 0.0, alpha: 0.3),
+        pageIndicatorInactiveColor: UIColor(rgb: 0xe3e3e7)
     )
     
     let chatList = PresentationThemeChatList(
@@ -141,7 +142,10 @@ private func makeDefaultPresentationTheme(accentColor: UIColor, serviceBackgroun
         searchBarKeyboardColor: .light,
         verifiedIconFillColor: accentColor,
         verifiedIconForegroundColor: .white,
-        secretIconColor: secretColor
+        secretIconColor: secretColor,
+        pinnedArchiveAvatarColor: PresentationThemeArchiveAvatarColors(backgroundColors: (UIColor(rgb: 0x72d5fd), UIColor(rgb: 0x2a9ef1)), foregroundColor: .white),
+        unpinnedArchiveAvatarColor: PresentationThemeArchiveAvatarColors(backgroundColors: (UIColor(rgb: 0xDEDEE5), UIColor(rgb: 0xC5C6CC)), foregroundColor: .white),
+        onlineDotColor: UIColor(rgb: 0x4cc91f)
     )
     
     let chatListDay = PresentationThemeChatList(
@@ -172,7 +176,10 @@ private func makeDefaultPresentationTheme(accentColor: UIColor, serviceBackgroun
         searchBarKeyboardColor: .light,
         verifiedIconFillColor: accentColor,
         verifiedIconForegroundColor: .white,
-        secretIconColor: secretColor
+        secretIconColor: secretColor,
+        pinnedArchiveAvatarColor: PresentationThemeArchiveAvatarColors(backgroundColors: (UIColor(rgb: 0x72d5fd), UIColor(rgb: 0x2a9ef1)), foregroundColor: .white),
+        unpinnedArchiveAvatarColor: PresentationThemeArchiveAvatarColors(backgroundColors: (UIColor(rgb: 0xDEDEE5), UIColor(rgb: 0xC5C6CC)), foregroundColor: .white),
+        onlineDotColor: UIColor(rgb: 0x4cc91f)
     )
     
     let bubble = PresentationThemeChatBubble(
