@@ -33,6 +33,14 @@ final class TelegramTimecode {
     }
 }
 
+final class TelegramCode {
+    init () {}
+}
+
+final class TelegramPre {
+    init () {}
+}
+
 struct TelegramTextAttributes {
     static let URL = "UrlAttributeT"
     static let PeerMention = "TelegramPeerMention"
@@ -40,4 +48,6 @@ struct TelegramTextAttributes {
     static let BotCommand = "TelegramBotCommand"
     static let Hashtag = "TelegramHashtag"
     static let Timecode = "TelegramTimecode"
+    static let Code = "TelegramCode"
+    static let Pre = "TelegramPre"
 }

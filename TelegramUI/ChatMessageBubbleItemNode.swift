@@ -257,7 +257,7 @@ class ChatMessageBubbleItemNode: ChatMessageItemView {
                             break
                         case .ignore:
                             return .fail
-                        case .url, .peerMention, .textMention, .botCommand, .hashtag, .instantPage, .wallpaper, .call, .openMessage, .timecode, .tooltip:
+                        case .url, .peerMention, .textMention, .botCommand, .code, .pre, .hashtag, .instantPage, .wallpaper, .call, .openMessage, .timecode, .tooltip:
                             return .waitForSingleTap
                     }
                 }
@@ -1725,6 +1725,16 @@ class ChatMessageBubbleItemNode: ChatMessageItemView {
                                 switch tapAction {
                                     case .none, .ignore:
                                         break
+                                    case let .pre(pre):
+                                        foundTapAction = true
+                                        UIPasteboard.general.string = pre
+                                        self.item?.controllerInteraction.presentController(OverlayStatusController(theme: (self.item?.presentationData.theme.theme)!, strings: (self.item?.presentationData.strings)!, type: .success), nil)
+                                        break loop
+                                    case let .code(code):
+                                        foundTapAction = true
+                                        UIPasteboard.general.string = code
+                                        self.item?.controllerInteraction.presentController(OverlayStatusController(theme: (self.item?.presentationData.theme.theme)!, strings: (self.item?.presentationData.strings)!, type: .success), nil)
+                                        break loop
                                     case let .url(url, concealed):
                                         foundTapAction = true
                                         self.item?.controllerInteraction.openUrl(url, concealed, nil)
@@ -1804,6 +1814,14 @@ class ChatMessageBubbleItemNode: ChatMessageItemView {
                                     switch tapAction {
                                         case .none, .ignore:
                                             break
+                                        case let .code(code):
+                                            foundTapAction = true
+                                            item.controllerInteraction.longTap(.code(code), message)
+                                            break loop
+                                        case let .pre(pre):
+                                            foundTapAction = true
+                                            item.controllerInteraction.longTap(.pre(pre), message)
+                                            break loop
                                         case let .url(url, _):
                                             foundTapAction = true
                                             item.controllerInteraction.longTap(.url(url), message)

@@ -863,6 +863,37 @@ public final class ChatController: TelegramController, KeyShortcutResponder, Gal
         }, longTap: { [weak self] action, message in
             if let strongSelf = self {
                 switch action {
+                    case let .code(code):
+                        let actionSheet = ActionSheetController(presentationTheme: strongSelf.presentationData.theme)
+                        actionSheet.setItemGroups([ActionSheetItemGroup(items: [
+                            ActionSheetTextItem(title: code),
+                            ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogCopy, color: .accent, action: { [weak actionSheet] in
+                                actionSheet?.dismissAnimated()
+                                UIPasteboard.general.string = code
+                            })
+                            ]), ActionSheetItemGroup(items: [
+                                ActionSheetButtonItem(title: strongSelf.presentationData.strings.Common_Cancel, color: .accent, action: { [weak actionSheet] in
+                                    actionSheet?.dismissAnimated()
+                                })
+                                ])])
+                        strongSelf.chatDisplayNode.dismissInput()
+                        strongSelf.present(actionSheet, in: .window(.root))
+                    case let .pre(pre):
+                        let actionSheet = ActionSheetController(presentationTheme: strongSelf.presentationData.theme)
+                        let prefixedNode = ActionSheetTextItem(title: pre, alignment: .left)
+                        actionSheet.setItemGroups([ActionSheetItemGroup(items: [
+                            prefixedNode,
+                            ActionSheetButtonItem(title: strongSelf.presentationData.strings.Conversation_LinkDialogCopy, color: .accent, action: { [weak actionSheet] in
+                                actionSheet?.dismissAnimated()
+                                UIPasteboard.general.string = pre
+                            })
+                            ]), ActionSheetItemGroup(items: [
+                                ActionSheetButtonItem(title: strongSelf.presentationData.strings.Common_Cancel, color: .accent, action: { [weak actionSheet] in
+                                    actionSheet?.dismissAnimated()
+                                })
+                                ])])
+                        strongSelf.chatDisplayNode.dismissInput()
+                        strongSelf.present(actionSheet, in: .window(.root))
                     case let .url(url):
                         var cleanUrl = url
                         var canAddToReadingList = true
