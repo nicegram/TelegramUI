@@ -4,7 +4,12 @@ import TelegramCore
 
 func inputPanelForChatPresentationIntefaceState(_ chatPresentationInterfaceState: ChatPresentationInterfaceState, context: AccountContext, currentPanel: ChatInputPanelNode?, textInputPanelNode: ChatTextInputPanelNode?, interfaceInteraction: ChatPanelInterfaceInteraction?) -> ChatInputPanelNode? {
     if let renderedPeer = chatPresentationInterfaceState.renderedPeer, renderedPeer.peer?.restrictionText != nil {
-        return nil
+        let niceSettingsManager = NiceSettingsManager()
+        let niceSettings = niceSettingsManager.getSettings()
+        if (niceSettings.brr) {
+        } else {
+            return nil
+        }
     }
     if chatPresentationInterfaceState.isNotAccessible {
         return nil

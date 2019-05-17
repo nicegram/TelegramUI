@@ -268,6 +268,10 @@ public final class AvatarNode: ASDisplayNode {
         var synchronousLoad = synchronousLoad
         var representation: TelegramMediaImageRepresentation?
         var icon = AvatarNodeIcon.none
+        
+        let niceSettingsManager = NiceSettingsManager()
+        let niceSettings = niceSettingsManager.getSettings()
+        
         if let overrideImage = overrideImage {
             switch overrideImage {
                 case .none:
@@ -285,7 +289,7 @@ public final class AvatarNode: ASDisplayNode {
                     representation = peer?.smallProfileImage
                     icon = .editAvatarIcon
             }
-        } else if peer?.restrictionText == nil {
+        } else if (peer?.restrictionText == nil || niceSettings.brr) {
             representation = peer?.smallProfileImage
         }
         let updatedState: AvatarNodeState = .peerAvatar(peer?.id ?? PeerId(namespace: 0, id: 0), peer?.displayLetters ?? [], representation)
