@@ -27,9 +27,26 @@ public struct ChatListNodePeersFilter: OptionSet {
 
 }
 
+public struct NiceChatListNodePeersFilter: OptionSet {
+    public var rawValue: Int32
+    
+    public init(rawValue: Int32) {
+        self.rawValue = rawValue
+    }
+    
+    public static let onlyPrivateChats = NiceChatListNodePeersFilter(rawValue: 1 << 0)
+    public static let onlyGroups = NiceChatListNodePeersFilter(rawValue: 1 << 1)
+    public static let onlyChannels = NiceChatListNodePeersFilter(rawValue: 1 << 3)
+    public static let onlyBots = NiceChatListNodePeersFilter(rawValue: 1 << 4)
+    public static let onlyNonMuted = NiceChatListNodePeersFilter(rawValue: 1 << 5)
+    public static let onlyUnread = NiceChatListNodePeersFilter(rawValue: 1 << 6)
+    
+    public static let all: [NiceChatListNodePeersFilter] = [.onlyBots, .onlyChannels, .onlyGroups, .onlyPrivateChats, .onlyUnread, .onlyNonMuted]
+}
+
 enum ChatListNodeMode {
     case chatList
-    case nonMutedChatList
+    case filteredChatList(filter: NiceChatListNodePeersFilter)
     case peers(filter: ChatListNodePeersFilter)
 }
 
@@ -143,7 +160,9 @@ private func mappedInsertEntries(context: AccountContext, nodeInteraction: ChatL
         switch entry.entry {
             case let .PeerEntry(index, presentationData, message, combinedReadState, notificationSettings, embeddedState, peer, presence, summaryInfo, editing, hasActiveRevealControls, selected, inputActivities, isAd):
                 switch mode {
-                    case .chatList, .nonMutedChatList:
+                    case .chatList:
+                        return ListViewInsertItem(index: entry.index, previousIndex: entry.previousIndex, item: ChatListItem(presentationData: presentationData, context: context, peerGroupId: peerGroupId, index: index, content: .peer(message: message, peer: peer, combinedReadState: combinedReadState, notificationSettings: notificationSettings, presence: presence, summaryInfo: summaryInfo, embeddedState: embeddedState, inputActivities: inputActivities, isAd: isAd, ignoreUnreadBadge: false), editing: editing, hasActiveRevealControls: hasActiveRevealControls, selected: selected, header: nil, enableContextActions: true, hiddenOffset: false, interaction: nodeInteraction), directionHint: entry.directionHint)
+                    case let .filteredChatList(_):
                         return ListViewInsertItem(index: entry.index, previousIndex: entry.previousIndex, item: ChatListItem(presentationData: presentationData, context: context, peerGroupId: peerGroupId, index: index, content: .peer(message: message, peer: peer, combinedReadState: combinedReadState, notificationSettings: notificationSettings, presence: presence, summaryInfo: summaryInfo, embeddedState: embeddedState, inputActivities: inputActivities, isAd: isAd, ignoreUnreadBadge: false), editing: editing, hasActiveRevealControls: hasActiveRevealControls, selected: selected, header: nil, enableContextActions: true, hiddenOffset: false, interaction: nodeInteraction), directionHint: entry.directionHint)
                     case let .peers(filter):
                         let itemPeer = peer.chatMainPeer
@@ -224,7 +243,9 @@ private func mappedUpdateEntries(context: AccountContext, nodeInteraction: ChatL
         switch entry.entry {
             case let .PeerEntry(index, presentationData, message, combinedReadState, notificationSettings, embeddedState, peer, presence, summaryInfo, editing, hasActiveRevealControls, selected, inputActivities, isAd):
                 switch mode {
-                    case .chatList, .nonMutedChatList:
+                    case .chatList:
+                        return ListViewUpdateItem(index: entry.index, previousIndex: entry.previousIndex, item: ChatListItem(presentationData: presentationData, context: context, peerGroupId: peerGroupId, index: index, content: .peer(message: message, peer: peer, combinedReadState: combinedReadState, notificationSettings: notificationSettings, presence: presence, summaryInfo: summaryInfo, embeddedState: embeddedState, inputActivities: inputActivities, isAd: isAd, ignoreUnreadBadge: false), editing: editing, hasActiveRevealControls: hasActiveRevealControls, selected: selected, header: nil, enableContextActions: true, hiddenOffset: false, interaction: nodeInteraction), directionHint: entry.directionHint)
+                    case let .filteredChatList(_):
                         return ListViewUpdateItem(index: entry.index, previousIndex: entry.previousIndex, item: ChatListItem(presentationData: presentationData, context: context, peerGroupId: peerGroupId, index: index, content: .peer(message: message, peer: peer, combinedReadState: combinedReadState, notificationSettings: notificationSettings, presence: presence, summaryInfo: summaryInfo, embeddedState: embeddedState, inputActivities: inputActivities, isAd: isAd, ignoreUnreadBadge: false), editing: editing, hasActiveRevealControls: hasActiveRevealControls, selected: selected, header: nil, enableContextActions: true, hiddenOffset: false, interaction: nodeInteraction), directionHint: entry.directionHint)
                     case let .peers(filter):
                         let itemPeer = peer.chatMainPeer
@@ -539,12 +560,53 @@ final class ChatListNode: ListView {
             let (rawEntries, isLoading) = chatListNodeEntriesForView(update.view, state: state, savedMessagesPeer: savedMessagesPeer, hideArchivedFolderByDefault: hideArchivedFolderByDefault, displayArchiveIntro: displayArchiveIntro, mode: mode)
             let entries = rawEntries.filter { entry in
                 switch entry {
-                case let .PeerEntry(_, _, _, _, notificationSettings, _, peer, _, _, _, _, _, _, _):
+                case let .PeerEntry(_, _, _, readState, notificationSettings, _, peer, _, _, _, _, _, _, _):
                     switch mode {
                         case .chatList:
                             return true
-                        case .nonMutedChatList:
-                            return !(notificationSettings?.isRemovedFromTotalUnreadCount ?? TelegramPeerNotificationSettings.defaultSettings.isRemovedFromTotalUnreadCount)
+                        case let .filteredChatList(filter):
+                            if filter.contains(.onlyPrivateChats) {
+                                var isBot: Bool = false
+                                if let p = peer.peers[peer.peerId] as? TelegramUser {
+                                    if (p.botInfo != nil) {
+                                        isBot = true
+                                    }
+                                }
+                                if (peer.peerId.namespace == Namespaces.Peer.CloudUser || peer.peerId.namespace == Namespaces.Peer.SecretChat) && !isBot {
+                                    return true
+                                }
+                            } else if filter.contains(.onlyNonMuted) {
+                                return !(notificationSettings?.isRemovedFromTotalUnreadCount ?? TelegramPeerNotificationSettings.defaultSettings.isRemovedFromTotalUnreadCount)
+                                
+                            } else if filter.contains(.onlyBots) {
+                                var isBot: Bool = false
+                                if let p = peer.peers[peer.peerId] as? TelegramUser {
+                                    if (p.botInfo != nil) {
+                                        isBot = true
+                                    }
+                                }
+                                return isBot
+                            } else if filter.contains(.onlyGroups) {
+                                var isGroup: Bool = false
+                                if let peer = peer.chatMainPeer as? TelegramChannel, case .group = peer.info {
+                                    isGroup = true
+                                } else if peer.peerId.namespace == Namespaces.Peer.CloudGroup {
+                                    isGroup = true
+                                }
+                                return isGroup
+                            } else if filter.contains(.onlyChannels) {
+                                if let peer = peer.chatMainPeer as? TelegramChannel, case .broadcast = peer.info {
+                                    return true
+                                } else {
+                                    return false
+                                }
+                            } else if filter.contains(.onlyUnread) {
+                                if (readState != nil) {
+                                    return readState!.isUnread
+                                }
+                            }
+                            
+                            return false
                         case let .peers(filter):
                             guard !filter.contains(.excludeSavedMessages) || peer.peerId != currentPeerId else { return false }
                             guard !filter.contains(.excludeSecretChats) || peer.peerId.namespace != Namespaces.Peer.SecretChat else { return false }
@@ -767,9 +829,9 @@ final class ChatListNode: ListView {
         let initialLocation: ChatListNodeLocation
         switch mode {
             case .chatList:
-                initialLocation = .initial(count: 50)
-            case .nonMutedChatList:
-                initialLocation = .initial(count: 400)
+                initialLocation = .initial(count: 200)
+            case .filteredChatList:
+                initialLocation = .initial(count: 600)
             case .peers:
                 initialLocation = .initial(count: 200)
         }
@@ -1270,7 +1332,7 @@ final class ChatListNode: ListView {
     private func setChatListLocation(_ location: ChatListNodeLocation) {
         // workaround
         switch self.mode {
-            case .nonMutedChatList:
+            case let .filteredChatList(_):
                 self.currentLocation = .initial(count: 400)
                 self.chatListLocation.set(location)
             default:

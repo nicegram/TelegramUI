@@ -269,9 +269,9 @@ private func niceFeaturesControllerEntries(niceSettings: NiceSettings, presentat
     
     //entries.append(.messageNotificationsHeader(presentationData.theme, "MESSAGE NOTIFICATIONS"))  // presentationData.strings.Nicegram_Settings_Features_MessageNotifications))
     //entries.append(.pinnedMessageNotification(presentationData.theme, "Pinned Messages", niceSettings.pinnedMessagesNotification))  //presentationData.strings.Nicegram_Settings_Features_PinnedMessages
-    entries.append(.chatsListHeader(presentationData.theme, "CHATS LIST"))
-    entries.append(.workmode(presentationData.theme, "Workmode", niceSettings.workmode))
-    entries.append(.workmodeNotice(presentationData.theme, "Switch between \"All\" and \"Non Muted\" chats"))
+    // entries.append(.chatsListHeader(presentationData.theme, "CHATS LIST"))
+    // entries.append(.workmode(presentationData.theme, "Workmode", niceSettings.workmode))
+    // entries.append(.workmodeNotice(presentationData.theme, "Switch between \"All\" and \"Non Muted\" chats"))
     entries.append(.tabsHeader(presentationData.theme, "TABS SETTINGS"))
     entries.append(.showContactsTab(presentationData.theme, "Show Contacts Tab", niceSettings.showContactsTab))
     entries.append(.chatScreenHeader(presentationData.theme, "CHAT SCREEN SETTINGS"))

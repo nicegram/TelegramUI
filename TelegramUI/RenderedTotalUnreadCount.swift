@@ -7,14 +7,14 @@ public enum RenderedTotalUnreadCountType {
     case filtered
 }
 
-public func renderedTotalUnreadCount(inAppNotificationSettings: InAppNotificationSettings, transaction: Transaction, onlyNonMuted: Bool = false) -> (Int32, RenderedTotalUnreadCountType) {
+public func renderedTotalUnreadCount(inAppNotificationSettings: InAppNotificationSettings, transaction: Transaction, filter: NiceChatListNodePeersFilter? = nil) -> (Int32, RenderedTotalUnreadCountType) {
     let totalUnreadState = transaction.getTotalUnreadState()
-    return renderedTotalUnreadCount(inAppSettings: inAppNotificationSettings, totalUnreadState: totalUnreadState, onlyNonMuted: onlyNonMuted)
+    return renderedTotalUnreadCount(inAppSettings: inAppNotificationSettings, totalUnreadState: totalUnreadState, filter: filter)
 }
 
-func renderedTotalUnreadCount(inAppSettings: InAppNotificationSettings, totalUnreadState: ChatListTotalUnreadState, onlyNonMuted: Bool = false) -> (Int32, RenderedTotalUnreadCountType) {
+func renderedTotalUnreadCount(inAppSettings: InAppNotificationSettings, totalUnreadState: ChatListTotalUnreadState, filter: NiceChatListNodePeersFilter? = nil) -> (Int32, RenderedTotalUnreadCountType) {
     let type: RenderedTotalUnreadCountType
-    if (onlyNonMuted) {
+    if (filter != nil) {
         type = .filtered
         return (totalUnreadState.count(for: .filtered, in: inAppSettings.totalUnreadCountDisplayCategory.statsType, with: inAppSettings.totalUnreadCountIncludeTags), type)
     } else {
@@ -28,7 +28,7 @@ func renderedTotalUnreadCount(inAppSettings: InAppNotificationSettings, totalUnr
     }
 }
 
-public func renderedTotalUnreadCount(accountManager: AccountManager, postbox: Postbox, onlyNonMuted: Bool = false) -> Signal<(Int32, RenderedTotalUnreadCountType), NoError> {
+public func renderedTotalUnreadCount(accountManager: AccountManager, postbox: Postbox, filter: NiceChatListNodePeersFilter? = nil) -> Signal<(Int32, RenderedTotalUnreadCountType), NoError> {
     let unreadCountsKey = PostboxViewKey.unreadCounts(items: [.total(nil)])
     return combineLatest(accountManager.sharedData(keys: [ApplicationSpecificSharedDataKeys.inAppNotificationSettings]), postbox.combinedView(keys: [unreadCountsKey]))
     |> map { sharedData, view -> (Int32, RenderedTotalUnreadCountType) in
@@ -46,7 +46,7 @@ public func renderedTotalUnreadCount(accountManager: AccountManager, postbox: Po
             inAppSettings = .defaultSettings
         }
         let type: RenderedTotalUnreadCountType
-        if (onlyNonMuted) {
+        if (filter != nil) {
             type = .filtered
             return (totalUnreadState.count(for: .filtered, in: inAppSettings.totalUnreadCountDisplayCategory.statsType, with: inAppSettings.totalUnreadCountIncludeTags), type)
         } else {

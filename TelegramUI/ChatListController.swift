@@ -64,9 +64,9 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
     private var validLayout: ContainerViewLayout?
     
     let context: AccountContext
-    private let controlsHistoryPreload: Bool
-    private let hideNetworkActivityStatus: Bool
-    public let onlyNonMuted: Bool
+    public let controlsHistoryPreload: Bool
+    public let hideNetworkActivityStatus: Bool
+    public var filter: NiceChatListNodePeersFilter?
     
     public let groupId: PeerGroupId
     
@@ -102,11 +102,15 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
     
     private var searchContentNode: NavigationBarSearchContentNode?
     
-    public init(context: AccountContext, groupId: PeerGroupId, controlsHistoryPreload: Bool, hideNetworkActivityStatus: Bool = false, onlyNonMuted: Bool = false) {
+    var switchToFilter: ((NiceChatListNodePeersFilter) -> Void)?
+    
+    weak var switchController: TabBarFilterSwitchController?
+    
+    public init(context: AccountContext, groupId: PeerGroupId, controlsHistoryPreload: Bool, hideNetworkActivityStatus: Bool = false, filter: NiceChatListNodePeersFilter? = nil) {
         self.context = context
         self.controlsHistoryPreload = controlsHistoryPreload
         self.hideNetworkActivityStatus = hideNetworkActivityStatus
-        self.onlyNonMuted = onlyNonMuted
+        self.filter = filter
         
         self.groupId = groupId
         
@@ -121,8 +125,9 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
         
         var title: String
         if case .root = self.groupId {
-            if (self.onlyNonMuted) {
-                title = self.presentationData.strings.DialogList_Title + "*"
+            // TODO: Chat tab names
+            if (self.filter != nil) {
+                title = getFilterTabName(filter: self.filter!) //self.presentationData.strings.DialogList_Title + "*"
             } else {
                 title = self.presentationData.strings.DialogList_Title
             }
@@ -140,8 +145,9 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
             let icon: UIImage?
             if (useSpecialTabBarIcons()) {
                 icon = UIImage(bundleImageName: "Chat List/Tabs/NY/IconChats")
-            } else if (self.onlyNonMuted) {
-                icon = UIImage(bundleImageName: "Chat List/InfoIcon")
+            // TODO: icons
+            } else if (self.filter != nil) {
+                icon = UIImage(bundleImageName: "Chat List/Tabs/NY/IconChats")
             } else {
                 icon = UIImage(bundleImageName: "Chat List/Tabs/IconChats")
             }
@@ -192,11 +198,30 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
             }
             //.auto for unread navigation
         }
+        
+        /*func presentTabBarPreviewingController(sourceNodes: [ASDisplayNode]) {
+            if (self.filter == nil) {
+                return
+            }
+            let controller = TabBarFilterSwitchController(sharedContext: self.context.sharedContext, switchToFilter: { [weak self] f in
+                self?.switchToFilter?(f)
+                }, sourceNodes: sourceNodes)
+            self.switchController = controller
+            self.context.sharedContext.mainWindow?.present(controller, on: .root)
+        }*/
+        
         self.longTapWithTabBar = { [weak self] in
             guard let strongSelf = self else {
                 return
             }
-            if (strongSelf.onlyNonMuted) {
+            if (strongSelf.filter != nil) {
+                let controller = TabBarFilterSwitchController(sharedContext: strongSelf.context.sharedContext, current: strongSelf.filter, available: NiceChatListNodePeersFilter.all, switchToFilter: { [weak self] f in
+                    
+                    strongSelf.context.sharedContext.switchToFilter(filter: f, withChatListController: strongSelf)
+                    //strongSelf.chatListDisplayNode.chatListNode.scrollToPosition(.auto)
+                    }, sourceNodes: [])
+                strongSelf.switchController = controller
+                strongSelf.context.sharedContext.mainWindow?.present(controller, on: .root)
                 return
             }
             if strongSelf.chatListDisplayNode.searchDisplayController != nil {
@@ -233,8 +258,9 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
                     var defaultTitle: String
                     if case .root = strongSelf.groupId {
                         defaultTitle = strongSelf.presentationData.strings.DialogList_Title
-                        if (strongSelf.onlyNonMuted) {
-                            defaultTitle = strongSelf.presentationData.strings.DialogList_Title + " w/Sound"
+                        if (strongSelf.filter != nil) {
+                            // Title
+                            defaultTitle = getFilterTabName(filter: strongSelf.filter!)
                         }
                     } else {
                         defaultTitle = strongSelf.presentationData.strings.ChatList_ArchivedChatsTitle
@@ -274,8 +300,9 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
                                 strongSelf.titleView.title = NetworkStatusTitle(text: strongSelf.presentationData.strings.State_Updating, activity: true, hasProxy: isRoot && hasProxy, connectsViaProxy: connectsViaProxy, isPasscodeSet: isRoot && isPasscodeSet, isManuallyLocked: isRoot && isManuallyLocked)
                             case .online:
                                 let title: String
-                                if (strongSelf.onlyNonMuted) {
-                                    title = strongSelf.presentationData.strings.DialogList_Title + " w/Sound"
+                                if (strongSelf.filter != nil) {
+                                    // Title
+                                    title = getFilterTabName(filter: strongSelf.filter!)
                                 } else {
                                     title = strongSelf.presentationData.strings.DialogList_Title
                                 }
@@ -312,7 +339,7 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
         
         self.badgeDisposable = (combineLatest(renderedTotalUnreadCount(accountManager: context.sharedContext.accountManager, postbox: context.account.postbox), self.presentationDataValue.get()) |> deliverOnMainQueue).start(next: { [weak self] count, presentationData in
             if let strongSelf = self {
-                if count.0 == 0 {
+                if count.0 == 0 || strongSelf.filter != nil {
                     strongSelf.tabBarItem.badgeValue = ""
                 } else {
                     strongSelf.tabBarItem.badgeValue = compactNumericCountString(Int(count.0), decimalSeparator: presentationData.dateTimeFormat.decimalSeparator)
@@ -389,8 +416,8 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
         if case .root = self.groupId {
             
             var title: String
-            if (self.onlyNonMuted) {
-                title = self.presentationData.strings.DialogList_Title + "*"
+            if (self.filter != nil) {
+                title = getFilterTabName(filter: self.filter!)
             } else {
                 title = self.presentationData.strings.DialogList_Title
             }

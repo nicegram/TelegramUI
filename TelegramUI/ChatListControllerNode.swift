@@ -68,8 +68,8 @@ final class ChatListControllerNode: ASDisplayNode {
         self.presentationData = presentationData
         
         let mode: ChatListNodeMode
-        if (controller.onlyNonMuted) {
-            mode = .nonMutedChatList
+        if (controller.filter != nil) {
+            mode = .filteredChatList(filter: controller.filter!)
         } else {
             mode = .chatList
         }

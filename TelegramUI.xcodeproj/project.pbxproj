@@ -184,11 +184,13 @@
 		09F85BA521E7821500D73170 /* ThemeGridSelectionPanelNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F85BA421E7821500D73170 /* ThemeGridSelectionPanelNode.swift */; };
 		09F85BA721E7DA5F00D73170 /* BlurredImageNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F85BA621E7DA5F00D73170 /* BlurredImageNode.swift */; };
 		09FE756D2153F5F900A3120F /* CallRouteActionSheetItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09FE756C2153F5F900A3120F /* CallRouteActionSheetItem.swift */; };
+		09FFBCD1227B7F9900C33B4B /* anim_archiveswipe.json in Resources */ = {isa = PBXBuildFile; fileRef = 09FFBCCF227B7F9000C33B4B /* anim_archiveswipe.json */; };
 		512163C6224E595800796C9A /* NiceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 512163C5224E595800796C9A /* NiceSettings.swift */; };
 		512AC2FA2257977700A2F587 /* NiceSettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 512AC2F92257977700A2F587 /* NiceSettingsManager.swift */; };
 		51826D9F2281B189003C936D /* ChatAskUrlController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51826D9E2281B189003C936D /* ChatAskUrlController.swift */; };
+		51B8ED50228CDD180006F3F4 /* NiceTabFilterSwitchController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B8ED4F228CDD180006F3F4 /* NiceTabFilterSwitchController.swift */; };
+		51B8ED52228CDEE40006F3F4 /* NiceTabFilterSwitchControllerNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B8ED51228CDEE40006F3F4 /* NiceTabFilterSwitchControllerNode.swift */; };
 		51C99521224C281200F87678 /* NiceFeaturesListController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C99520224C281200F87678 /* NiceFeaturesListController.swift */; };
-		09FFBCD1227B7F9900C33B4B /* anim_archiveswipe.json in Resources */ = {isa = PBXBuildFile; fileRef = 09FFBCCF227B7F9000C33B4B /* anim_archiveswipe.json */; };
 		9F06830921A404AB001D8EDB /* NotificationExceptionControllerNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06830821A404AB001D8EDB /* NotificationExceptionControllerNode.swift */; };
 		9F06830B21A404C4001D8EDB /* NotificationExceptionSettingsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06830A21A404C4001D8EDB /* NotificationExceptionSettingsController.swift */; };
 		D000CABA21EE130D0011B15D /* MapResourceToAvatarSizes.swift in Sources */ = {isa = PBXBuildFile; fileRef = D000CAB921EE130D0011B15D /* MapResourceToAvatarSizes.swift */; };
@@ -1377,11 +1379,13 @@
 		09F85BA421E7821500D73170 /* ThemeGridSelectionPanelNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeGridSelectionPanelNode.swift; sourceTree = "<group>"; };
 		09F85BA621E7DA5F00D73170 /* BlurredImageNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlurredImageNode.swift; sourceTree = "<group>"; };
 		09FE756C2153F5F900A3120F /* CallRouteActionSheetItem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CallRouteActionSheetItem.swift; sourceTree = "<group>"; };
+		09FFBCCF227B7F9000C33B4B /* anim_archiveswipe.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = anim_archiveswipe.json; sourceTree = "<group>"; };
 		512163C5224E595800796C9A /* NiceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiceSettings.swift; sourceTree = "<group>"; };
 		512AC2F92257977700A2F587 /* NiceSettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiceSettingsManager.swift; sourceTree = "<group>"; };
 		51826D9E2281B189003C936D /* ChatAskUrlController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAskUrlController.swift; sourceTree = "<group>"; };
+		51B8ED4F228CDD180006F3F4 /* NiceTabFilterSwitchController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiceTabFilterSwitchController.swift; sourceTree = "<group>"; };
+		51B8ED51228CDEE40006F3F4 /* NiceTabFilterSwitchControllerNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiceTabFilterSwitchControllerNode.swift; sourceTree = "<group>"; };
 		51C99520224C281200F87678 /* NiceFeaturesListController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiceFeaturesListController.swift; sourceTree = "<group>"; };
-		09FFBCCF227B7F9000C33B4B /* anim_archiveswipe.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = anim_archiveswipe.json; sourceTree = "<group>"; };
 		9F06830821A404AB001D8EDB /* NotificationExceptionControllerNode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotificationExceptionControllerNode.swift; sourceTree = "<group>"; };
 		9F06830A21A404C4001D8EDB /* NotificationExceptionSettingsController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotificationExceptionSettingsController.swift; sourceTree = "<group>"; };
 		D000CAB921EE130D0011B15D /* MapResourceToAvatarSizes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapResourceToAvatarSizes.swift; sourceTree = "<group>"; };
@@ -2747,14 +2751,6 @@
 			name = UI;
 			sourceTree = "<group>";
 		};
-		51C9951F224C27BE00F87678 /* Nice */ = {
-			isa = PBXGroup;
-			children = (
-				51C99520224C281200F87678 /* NiceFeaturesListController.swift */,
-			);
-			name = Nice;
-			sourceTree = "<group>";
-		};
 		09F215982263E61400AEDF6D /* Passcode */ = {
 			isa = PBXGroup;
 			children = (
@@ -2770,6 +2766,16 @@
 				094735022275B62B00EA2312 /* PasscodeLayout.swift */,
 			);
 			name = Passcode;
+			sourceTree = "<group>";
+		};
+		51C9951F224C27BE00F87678 /* Nice */ = {
+			isa = PBXGroup;
+			children = (
+				51C99520224C281200F87678 /* NiceFeaturesListController.swift */,
+				51B8ED4F228CDD180006F3F4 /* NiceTabFilterSwitchController.swift */,
+				51B8ED51228CDEE40006F3F4 /* NiceTabFilterSwitchControllerNode.swift */,
+			);
+			name = Nice;
 			sourceTree = "<group>";
 		};
 		D00580B421E4BFE800CB7CD3 /* Undo Overlay */ = {
@@ -5839,6 +5845,7 @@
 				D0EC6D8A1EB9F58800EBF1C3 /* ChatInfo.swift in Sources */,
 				D0EC6D8B1EB9F58800EBF1C3 /* ChatHistoryNavigationStack.swift in Sources */,
 				D0EC6D8C1EB9F58800EBF1C3 /* NavigateToChatController.swift in Sources */,
+				51B8ED52228CDEE40006F3F4 /* NiceTabFilterSwitchControllerNode.swift in Sources */,
 				0962E67321B622BE00245FD9 /* PermissionSplitTest.swift in Sources */,
 				099529B021D2123E00805E13 /* ChatMessageUnsupportedBubbleContentNode.swift in Sources */,
 				D0EC6D8D1EB9F58800EBF1C3 /* ChatMessageActionItemNode.swift in Sources */,
@@ -6150,6 +6157,7 @@
 				D0EC6E151EB9F58900EBF1C3 /* InstantPageLinkSelectionView.swift in Sources */,
 				D08A10BB211DF7A80077488B /* StickerSettings.swift in Sources */,
 				D0EC6E161EB9F58900EBF1C3 /* InstantPageLayoutSpacings.swift in Sources */,
+				51B8ED50228CDD180006F3F4 /* NiceTabFilterSwitchController.swift in Sources */,
 				D0EC6E171EB9F58900EBF1C3 /* InstantPageTextStyleStack.swift in Sources */,
 				D0EC6E181EB9F58900EBF1C3 /* InstantPageTextItem.swift in Sources */,
 				D01C06B51FBB7720001561AB /* ChatMediaInputSettingsItem.swift in Sources */,

@@ -13,7 +13,7 @@ public final class TelegramRootController: NavigationController {
     
     public var contactsController: ContactsController?
     public var callListController: CallListController?
-    public var nonMutedChatListController: ChatListController?
+    public var filteredChatListController: ChatListController?
     public var chatListController: ChatListController?
     public var accountSettingsController: ViewController?
     
@@ -50,12 +50,12 @@ public final class TelegramRootController: NavigationController {
         self.presentationDataDisposable?.dispose()
     }
     
-    public func addRootControllers(showCallsTab: Bool, showNonMutedChatsTab: Bool, showContactsTab: Bool) {
+    public func addRootControllers(showCallsTab: Bool, showFilteredChatsTab: NiceChatListNodePeersFilter?, showContactsTab: Bool) {
         let tabBarController = TabBarController(navigationBarPresentationData: NavigationBarPresentationData(presentationData: self.presentationData), theme: TabBarControllerTheme(rootControllerTheme: self.presentationData.theme))
         let chatListController = ChatListController(context: self.context, groupId: .root, controlsHistoryPreload: true)
-        let nonMutedChatListController = ChatListController(context: self.context, groupId: .root, controlsHistoryPreload: true, onlyNonMuted: true)
+        let filteredChatListController = ChatListController(context: self.context, groupId: .root, controlsHistoryPreload: true, filter: .onlyNonMuted)
         chatListController.tabBarItem.badgeValue = self.context.sharedContext.switchingData.chatListBadge
-        nonMutedChatListController.tabBarItem.badgeValue = self.context.sharedContext.switchingData.chatListBadge
+        filteredChatListController.tabBarItem.badgeValue = self.context.sharedContext.switchingData.chatListBadge
         let callListController = CallListController(context: self.context, mode: .tab)
         
         var controllers: [ViewController] = []
@@ -70,8 +70,8 @@ public final class TelegramRootController: NavigationController {
         if showCallsTab {
             controllers.append(callListController)
         }
-        if showNonMutedChatsTab {
-            controllers.append(nonMutedChatListController)
+        if (showFilteredChatsTab != nil) {
+            controllers.append(filteredChatListController)
         }
         controllers.append(chatListController)
         
@@ -86,7 +86,7 @@ public final class TelegramRootController: NavigationController {
         
         self.contactsController = contactsController
         self.callListController = callListController
-        self.nonMutedChatListController = nonMutedChatListController
+        self.filteredChatListController = filteredChatListController
         self.chatListController = chatListController
         self.accountSettingsController = accountSettingsController
         self.rootTabController = tabBarController
@@ -95,7 +95,7 @@ public final class TelegramRootController: NavigationController {
         
     }
     
-    public func updateRootControllers(showCallsTab: Bool, showNonMutedChatsTab: Bool, showContactsTab: Bool) {
+    public func updateRootControllers(showCallsTab: Bool, showFilteredChatsTab: NiceChatListNodePeersFilter?, showContactsTab: Bool) {
         guard let rootTabController = self.rootTabController else {
             return
         }
@@ -106,8 +106,9 @@ public final class TelegramRootController: NavigationController {
         if showCallsTab {
             controllers.append(self.callListController!)
         }
-        if showNonMutedChatsTab {
-            controllers.append(self.nonMutedChatListController!)
+        if (showFilteredChatsTab != nil) {
+            self.filteredChatListController!.filter = showFilteredChatsTab
+            controllers.append(self.filteredChatListController!)
         }
         controllers.append(self.chatListController!)
         controllers.append(self.accountSettingsController!)
