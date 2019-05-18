@@ -6,9 +6,7 @@ func titlePanelForChatPresentationInterfaceState(_ chatPresentationInterfaceStat
         return nil
     }
     if chatPresentationInterfaceState.renderedPeer?.peer?.restrictionText != nil {
-        let niceSettingsManager = NiceSettingsManager()
-        let niceSettings = niceSettingsManager.getSettings()
-        if (niceSettings.brr) {
+        if (context.sharedContext.immediateExperimentalUISettings.brr) {
         } else {
             return nil
         }

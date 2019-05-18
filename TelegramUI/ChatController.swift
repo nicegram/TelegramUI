@@ -4207,13 +4207,11 @@ public final class ChatController: TelegramController, KeyShortcutResponder, Gal
                         self.navigationActionDisposable.set((peerView.get()
                             |> take(1)
                             |> deliverOnMainQueue).start(next: { [weak self] peerView in
-                                let niceSettingsManager = NiceSettingsManager()
-                                let niceSettings = niceSettingsManager.getSettings()
                                 if let strongSelf = self, let peer = peerView.peers[peerView.peerId], peer.restrictionText == nil && !strongSelf.presentationInterfaceState.isNotAccessible {
                                     if let infoController = peerInfoController(context: strongSelf.context, peer: peer) {
                                         (strongSelf.navigationController as? NavigationController)?.pushViewController(infoController)
                                     }
-                                } else if let strongSelf = self, let peer = peerView.peers[peerView.peerId], niceSettings.brr && !strongSelf.presentationInterfaceState.isNotAccessible {
+                                } else if let strongSelf = self, let peer = peerView.peers[peerView.peerId], self!.context.sharedContext.immediateExperimentalUISettings.brr && !strongSelf.presentationInterfaceState.isNotAccessible {
                                     if let infoController = peerInfoController(context: strongSelf.context, peer: peer) {
                                         (strongSelf.navigationController as? NavigationController)?.pushViewController(infoController)
                                     }
@@ -5847,13 +5845,11 @@ public final class ChatController: TelegramController, KeyShortcutResponder, Gal
                     strongSelf.navigationActionDisposable.set((strongSelf.context.account.postbox.loadedPeerWithId(peerId)
                         |> take(1)
                         |> deliverOnMainQueue).start(next: { [weak self] peer in
-                            let niceSettingsManager = NiceSettingsManager()
-                            let niceSettings = niceSettingsManager.getSettings()
                             if let strongSelf = self, peer.restrictionText == nil {
                                 if let infoController = peerInfoController(context: strongSelf.context, peer: peer) {
                                     (strongSelf.navigationController as? NavigationController)?.pushViewController(infoController)
                                 }
-                            } else if let strongSelf = self, niceSettings.brr {
+                            } else if let strongSelf = self, self!.context.sharedContext.immediateExperimentalUISettings.brr {
                                 if let infoController = peerInfoController(context: strongSelf.context, peer: peer) {
                                     (strongSelf.navigationController as? NavigationController)?.pushViewController(infoController)
                                 }

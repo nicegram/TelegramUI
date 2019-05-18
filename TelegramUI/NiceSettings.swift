@@ -16,19 +16,17 @@ public struct NiceSettings: PreferencesEntry, Equatable {
     public var showContactsTab: Bool
     public var bigEmojis: Bool
     public var transparentEmojisBubble: Bool
-    public var brr: Bool
     
     public static var defaultSettings: NiceSettings {
-        return NiceSettings(pinnedMessagesNotification: true, workmode: false, showContactsTab: true, bigEmojis: true, transparentEmojisBubble: false, brr: false)
+        return NiceSettings(pinnedMessagesNotification: true, workmode: false, showContactsTab: true, bigEmojis: true, transparentEmojisBubble: false)
     }
     
-    init(pinnedMessagesNotification: Bool, workmode: Bool, showContactsTab: Bool, bigEmojis: Bool, transparentEmojisBubble: Bool, brr: Bool) {
+    init(pinnedMessagesNotification: Bool, workmode: Bool, showContactsTab: Bool, bigEmojis: Bool, transparentEmojisBubble: Bool) {
         self.pinnedMessagesNotification = pinnedMessagesNotification
         self.workmode = workmode
         self.showContactsTab = showContactsTab
         self.bigEmojis = bigEmojis
         self.transparentEmojisBubble = transparentEmojisBubble
-        self.brr = brr
     }
     
     public init(decoder: PostboxDecoder) {
@@ -37,7 +35,6 @@ public struct NiceSettings: PreferencesEntry, Equatable {
         self.showContactsTab = decoder.decodeBoolForKey("nice:showContactsTab", orElse: true)
         self.bigEmojis = decoder.decodeBoolForKey("nice:bigEmojis", orElse: true)
         self.transparentEmojisBubble = decoder.decodeBoolForKey("nice:transparentEmojisBubble", orElse: false)
-        self.brr = decoder.decodeBoolForKey("nice:brr", orElse: false)
     }
     
     public func encode(_ encoder: PostboxEncoder) {
@@ -46,7 +43,6 @@ public struct NiceSettings: PreferencesEntry, Equatable {
         encoder.encodeBool(self.showContactsTab, forKey: "nice:showContactsTab")
         encoder.encodeBool(self.bigEmojis, forKey: "nice:bigEmojis")
         encoder.encodeBool(self.transparentEmojisBubble, forKey: "nice:transparentEmojisBubble")
-        encoder.encodeBool(self.brr, forKey: "nice:brr")
     }
     
     public func isEqual(to: PreferencesEntry) -> Bool {
@@ -58,7 +54,7 @@ public struct NiceSettings: PreferencesEntry, Equatable {
     }
     
     public static func ==(lhs: NiceSettings, rhs: NiceSettings) -> Bool {
-        return lhs.pinnedMessagesNotification == rhs.pinnedMessagesNotification && lhs.workmode == rhs.workmode && lhs.showContactsTab == rhs.showContactsTab && lhs.bigEmojis == rhs.bigEmojis && lhs.transparentEmojisBubble == rhs.transparentEmojisBubble && lhs.brr == rhs.brr
+        return lhs.pinnedMessagesNotification == rhs.pinnedMessagesNotification && lhs.workmode == rhs.workmode && lhs.showContactsTab == rhs.showContactsTab && lhs.bigEmojis == rhs.bigEmojis && lhs.transparentEmojisBubble == rhs.transparentEmojisBubble
     }
     
     /*

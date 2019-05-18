@@ -301,7 +301,7 @@ private enum DebugControllerEntry: ItemListNodeEntry {
                 })
             case let .nicegramDebug(theme, value):
                 return ItemListSwitchItem(theme: theme, title: "Nicegram Debug", value: value, sectionId: self.section, style: .blocks, updated: { value in
-                    let _ = updateNiceSettingsInteractively(accountManager: arguments.sharedContext.accountManager, { settings in
+                    let _ = updateExperimentalUISettingsInteractively(accountManager: arguments.sharedContext.accountManager, { settings in
                         var settings = settings
                         settings.brr = value
                         return settings
@@ -447,9 +447,7 @@ private func debugControllerEntries(presentationData: PresentationData, loggingS
     entries.append(.logToConsole(presentationData.theme, loggingSettings.logToConsole))
     entries.append(.redactSensitiveData(presentationData.theme, loggingSettings.redactSensitiveData))
     
-    let niceSettingsManager = NiceSettingsManager()
-    let niceSettings = niceSettingsManager.getSettings()
-    entries.append(.nicegramDebug(presentationData.theme, niceSettings.brr))
+    entries.append(.nicegramDebug(presentationData.theme, experimentalSettings.brr))
     
     entries.append(.enableRaiseToSpeak(presentationData.theme, mediaInputSettings.enableRaiseToSpeak))
     entries.append(.keepChatNavigationStack(presentationData.theme, experimentalSettings.keepChatNavigationStack))

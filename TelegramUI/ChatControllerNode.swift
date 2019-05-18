@@ -1385,9 +1385,7 @@ class ChatControllerNode: ASDisplayNode, UIScrollViewDelegate {
             }
             
             if (restrictionText != chatPresentationInterfaceState.strings.Channel_ErrorAccessDenied) {
-                let niceSettingsManager = NiceSettingsManager()
-                let niceSettings = niceSettingsManager.getSettings()
-                if (niceSettings.brr) {
+                if (self.context.sharedContext.immediateExperimentalUISettings.brr) {
                     restrictionText = nil
                 }
             }
