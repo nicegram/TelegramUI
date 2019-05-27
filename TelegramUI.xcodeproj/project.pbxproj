@@ -188,6 +188,7 @@
 		512163C6224E595800796C9A /* NiceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 512163C5224E595800796C9A /* NiceSettings.swift */; };
 		512AC2FA2257977700A2F587 /* NiceSettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 512AC2F92257977700A2F587 /* NiceSettingsManager.swift */; };
 		51826D9F2281B189003C936D /* ChatAskUrlController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51826D9E2281B189003C936D /* ChatAskUrlController.swift */; };
+		51970DEB229C9B0300F7921B /* NiceStrings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51970DEA229C9B0300F7921B /* NiceStrings.swift */; };
 		51B8ED50228CDD180006F3F4 /* NiceTabFilterSwitchController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B8ED4F228CDD180006F3F4 /* NiceTabFilterSwitchController.swift */; };
 		51B8ED52228CDEE40006F3F4 /* NiceTabFilterSwitchControllerNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B8ED51228CDEE40006F3F4 /* NiceTabFilterSwitchControllerNode.swift */; };
 		51C99521224C281200F87678 /* NiceFeaturesListController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C99520224C281200F87678 /* NiceFeaturesListController.swift */; };
@@ -1383,6 +1384,7 @@
 		512163C5224E595800796C9A /* NiceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiceSettings.swift; sourceTree = "<group>"; };
 		512AC2F92257977700A2F587 /* NiceSettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiceSettingsManager.swift; sourceTree = "<group>"; };
 		51826D9E2281B189003C936D /* ChatAskUrlController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAskUrlController.swift; sourceTree = "<group>"; };
+		51970DEA229C9B0300F7921B /* NiceStrings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiceStrings.swift; sourceTree = "<group>"; };
 		51B8ED4F228CDD180006F3F4 /* NiceTabFilterSwitchController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiceTabFilterSwitchController.swift; sourceTree = "<group>"; };
 		51B8ED51228CDEE40006F3F4 /* NiceTabFilterSwitchControllerNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiceTabFilterSwitchControllerNode.swift; sourceTree = "<group>"; };
 		51C99520224C281200F87678 /* NiceFeaturesListController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiceFeaturesListController.swift; sourceTree = "<group>"; };
@@ -3787,6 +3789,7 @@
 				D010C2CD1EA7DDD600F41B96 /* DefaultPresentationStrings.swift */,
 				D06FFBA71EAFAC4F00CB53D4 /* PresentationThemeEssentialGraphics.swift */,
 				D0EAE09F1EB21256005296C1 /* StringPluralization.swift */,
+				51970DEA229C9B0300F7921B /* NiceStrings.swift */,
 			);
 			name = "Presentation Data";
 			sourceTree = "<group>";
@@ -6313,6 +6316,7 @@
 				D01FB437217CEC62009C6134 /* FetchVideoThumbnail.swift in Sources */,
 				D0EC6E651EB9F58900EBF1C3 /* TwoStepVerificationResetController.swift in Sources */,
 				D0EC6E661EB9F58900EBF1C3 /* PasscodeOptionsController.swift in Sources */,
+				51970DEB229C9B0300F7921B /* NiceStrings.swift in Sources */,
 				09CE95082237A53900A7D2C3 /* SettingsSearchableItems.swift in Sources */,
 				D0383EDE207D1A1600C45548 /* emoji_suggestions.cpp in Sources */,
 				D0EC6E671EB9F58900EBF1C3 /* DataAndStorageSettingsController.swift in Sources */,

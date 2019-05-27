@@ -508,7 +508,7 @@ private func settingsEntries(account: Account, presentationData: PresentationDat
             entries.append(.proxy(presentationData.theme, PresentationResourcesSettings.proxy, presentationData.strings.Settings_Proxy, valueString))
         }
 
-        entries.append(.niceFeatures(presentationData.theme, "Nice Features")) //presentationData.strings.Nicegram_Settings_Features))
+        entries.append(.niceFeatures(presentationData.theme, l(key: "NiceFeatures.Title", locale: presentationData.strings.primaryComponent.languageCode)))
         entries.append(.savedMessages(presentationData.theme, PresentationResourcesSettings.savedMessages, presentationData.strings.Settings_SavedMessages))
         entries.append(.recentCalls(presentationData.theme, PresentationResourcesSettings.recentCalls, presentationData.strings.CallSettings_RecentCalls))
         entries.append(.stickers(presentationData.theme, PresentationResourcesSettings.stickers, presentationData.strings.ChatSettings_Stickers, unreadTrendingStickerPacks == 0 ? "" : "\(unreadTrendingStickerPacks)", archivedPacks))

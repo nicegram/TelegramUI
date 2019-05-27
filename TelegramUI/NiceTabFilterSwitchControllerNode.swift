@@ -210,17 +210,17 @@ private final class SwitchTabFilterItemNode: ASDisplayNode, AbstractSwitchTabFil
 public func getFilterTabName (filter: NiceChatListNodePeersFilter) -> String {
     switch (filter) {
     case .onlyPrivateChats:
-        return "Private"
+        return "ChatFilter.Private"
     case .onlyGroups:
-        return "Groups"
+        return "ChatFilter.Groups"
     case .onlyChannels:
-        return "Channels"
+        return "ChatFilter.Channels"
     case .onlyBots:
-        return "Bots"
+        return "ChatFilter.Bots"
     case .onlyNonMuted:
-        return "Unmuted"
+        return "ChatFilter.Unmuted"
     case .onlyUnread:
-        return "Unread"
+        return "ChatFilter.Unread"
     default:
         return "Chats*"
     }
@@ -279,7 +279,7 @@ final class TabBarFilterSwitchControllerNode: ViewControllerTracingNode {
                 isCurrent = true
             }
             
-            tabName = getFilterTabName(filter: filter)
+            tabName = l(key: getFilterTabName(filter: filter), locale: self.presentationData.strings.primaryComponent.languageCode)
             if (tabName == nil) {
                 continue
             }

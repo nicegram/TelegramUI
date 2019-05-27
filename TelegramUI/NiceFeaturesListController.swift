@@ -272,10 +272,11 @@ private func niceFeaturesControllerEntries(niceSettings: NiceSettings, presentat
     // entries.append(.chatsListHeader(presentationData.theme, "CHATS LIST"))
     // entries.append(.workmode(presentationData.theme, "Workmode", niceSettings.workmode))
     // entries.append(.workmodeNotice(presentationData.theme, "Switch between \"All\" and \"Non Muted\" chats"))
-    entries.append(.tabsHeader(presentationData.theme, "TABS SETTINGS"))
-    entries.append(.showContactsTab(presentationData.theme, "Show Contacts Tab", niceSettings.showContactsTab))
-    entries.append(.chatScreenHeader(presentationData.theme, "CHAT SCREEN SETTINGS"))
-    entries.append(.animatedStickers(presentationData.theme, "Animated Stickers", GlobalExperimentalSettings.animatedStickers))
+    
+    entries.append(.tabsHeader(presentationData.theme, l(key: "NiceFeatures.Tabs.Header", locale: presentationData.strings.primaryComponent.languageCode)))
+    entries.append(.showContactsTab(presentationData.theme, l(key: "NiceFeatures.Tabs.ShowContacts", locale: presentationData.strings.primaryComponent.languageCode), niceSettings.showContactsTab))
+    entries.append(.chatScreenHeader(presentationData.theme, l(key: "NiceFeatures.ChatScreen.Header", locale: presentationData.strings.primaryComponent.languageCode)))
+    entries.append(.animatedStickers(presentationData.theme, l(key:  "NiceFeatures.ChatScreen.AnimatedStickers", locale: presentationData.strings.primaryComponent.languageCode), GlobalExperimentalSettings.animatedStickers))
     // entries.append(.transparentEmojisBubble(presentationData.theme, "Transparent Emojis Bubble", niceSettings.transparentEmojisBubble))
     // entries.append(.transparentEmojisBubbleNotice(presentationData.theme, "Looks like emojis in iMessage. Removes bubble for emoji-only messages."))
     
@@ -357,7 +358,7 @@ public func niceFeaturesController(context: AccountContext) -> ViewController {
                 }
             }
             
-            let controllerState = ItemListControllerState(theme: presentationData.theme, title: .text("Nice Features"), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back))
+            let controllerState = ItemListControllerState(theme: presentationData.theme, title: .text(l(key: "NiceFeatures.Title", locale: presentationData.strings.primaryComponent.languageCode)), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back))
             let listState = ItemListNodeState(entries: entries, style: .blocks, ensureVisibleItemTag: focusOnItemTag, initialScrollToItem: scrollToItem)
             
             return (controllerState, (listState, arguments))

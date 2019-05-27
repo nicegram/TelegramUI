@@ -587,7 +587,7 @@ func contextMenuForChatPresentationIntefaceState(chatPresentationInterfaceState:
             actions.append(.sheet(ChatMessageContextMenuSheetAction(color: .accent, title: chatPresentationInterfaceState.strings.Conversation_ContextMenuForward, action: {
                     interfaceInteraction.forwardMessages(selectAll ? messages : [message])
             })))
-            actions.append(.sheet(ChatMessageContextMenuSheetAction(color: .accent, title: "Save to Cloud", action: {
+            actions.append(.sheet(ChatMessageContextMenuSheetAction(color: .accent, title: l(key: "Chat.SaveToCloud", locale: chatPresentationInterfaceState.strings.primaryComponent.languageCode), action: {
                 interfaceInteraction.cloudMessages(selectAll ? messages : [message])
             })))
         }
