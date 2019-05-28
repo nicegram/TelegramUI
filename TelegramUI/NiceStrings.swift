@@ -20,5 +20,5 @@ public func l(key: String, locale: String = "en") -> String {
         lang = "en"
     }
     
-    return niceLocales[lang]?[key] ?? key
+    return niceLocales[lang]?[key] ?? niceLocales["en"]?[key] ?? key
 }
