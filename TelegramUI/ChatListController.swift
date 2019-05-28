@@ -127,7 +127,7 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
         if case .root = self.groupId {
             // TODO: Chat tab names
             if (self.filter != nil) {
-                title = l(key: getFilterTabName(filter: self.filter!), locale: self.presentationData.strings.primaryComponent.languageCode)
+                title = l(key: getFilterTabName(filter: self.filter!), locale: self.presentationData.strings.baseLanguageCode)
             } else {
                 title = self.presentationData.strings.DialogList_Title
             }
@@ -260,7 +260,7 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
                         defaultTitle = strongSelf.presentationData.strings.DialogList_Title
                         if (strongSelf.filter != nil) {
                             // Title
-                            defaultTitle = l(key: getFilterTabName(filter: strongSelf.filter!), locale: strongSelf.presentationData.strings.primaryComponent.languageCode)
+                            defaultTitle = l(key: getFilterTabName(filter: strongSelf.filter!), locale: strongSelf.presentationData.strings.baseLanguageCode)
                         }
                     } else {
                         defaultTitle = strongSelf.presentationData.strings.ChatList_ArchivedChatsTitle
@@ -302,7 +302,7 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
                                 let title: String
                                 if (strongSelf.filter != nil) {
                                     // Title
-                                    title = l(key: getFilterTabName(filter: strongSelf.filter!), locale: strongSelf.presentationData.strings.primaryComponent.languageCode)
+                                    title = l(key: getFilterTabName(filter: strongSelf.filter!), locale: strongSelf.presentationData.strings.baseLanguageCode)
                                 } else {
                                     title = strongSelf.presentationData.strings.DialogList_Title
                                 }
@@ -417,7 +417,7 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
             
             var title: String
             if (self.filter != nil) {
-                title = l(key: getFilterTabName(filter: self.filter!), locale: self.presentationData.strings.primaryComponent.languageCode)
+                title = l(key: getFilterTabName(filter: self.filter!), locale: self.presentationData.strings.baseLanguageCode)
             } else {
                 title = self.presentationData.strings.DialogList_Title
             }

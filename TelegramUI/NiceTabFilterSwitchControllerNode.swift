@@ -279,7 +279,7 @@ final class TabBarFilterSwitchControllerNode: ViewControllerTracingNode {
                 isCurrent = true
             }
             
-            tabName = l(key: getFilterTabName(filter: filter), locale: self.presentationData.strings.primaryComponent.languageCode)
+            tabName = l(key: getFilterTabName(filter: filter), locale: self.presentationData.strings.baseLanguageCode)
             if (tabName == nil) {
                 continue
             }

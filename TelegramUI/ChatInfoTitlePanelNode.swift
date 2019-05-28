@@ -29,7 +29,7 @@ private enum ChatInfoTitleButton {
             case .report:
                 return strings.ReportPeer_Report
             case .gotopin:
-                return l(key: "Chat.OpenPin", locale: strings.primaryComponent.languageCode)
+                return l(key: "Chat.OpenPin", locale: strings.baseLanguageCode)
             case .unarchive:
                 return strings.ChatList_UnarchiveAction
         }

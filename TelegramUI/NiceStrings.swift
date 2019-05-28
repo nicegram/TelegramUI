@@ -8,17 +8,35 @@
 
 import Foundation
 
+private func gd(locale: String) -> [String : String] {
+    return NSDictionary(contentsOf: URL(fileURLWithPath: Bundle.main.path(forResource: "NiceLocalizable", ofType: "strings", inDirectory: nil, forLocalization: locale)!)) as! [String : String]
+}
+
 let niceLocales: [String : [String : String]] = [
-    "en" : NSDictionary(contentsOf: URL(fileURLWithPath: Bundle.main.path(forResource: "NiceLocalizable", ofType: "strings", inDirectory: nil, forLocalization: "en")!)) as! [String : String],
-    "ru": NSDictionary(contentsOf: URL(fileURLWithPath: Bundle.main.path(forResource: "NiceLocalizable", ofType: "strings", inDirectory: nil, forLocalization: "ru")!)) as! [String : String]
+    "en" : gd(locale: "en"),
+    "ru": gd(locale: "ru"),
+    "ar": gd(locale: "ar"),
+    "de": gd(locale: "de"),
+    "it": gd(locale: "it"),
+    "es": gd(locale: "es"),
+    
+    // Chinese
+    // Simplified
+    "zh-hans": gd(locale: "zh-hans"),
+    // Traditional
+    "zh-hant": gd(locale: "zh-hant")
 ]
 
 public func l(key: String, locale: String = "en") -> String {
     var lang = locale
     
-    if !niceLocales.keys.contains(locale) {
-        lang = "en"
+    let rawSuffix = "-raw"
+    if lang.hasSuffix(rawSuffix) {
+        lang = String(lang.dropLast(rawSuffix.count))
     }
     
+    if !niceLocales.keys.contains(lang) {
+        lang = "en"
+    }
     return niceLocales[lang]?[key] ?? niceLocales["en"]?[key] ?? key
 }
