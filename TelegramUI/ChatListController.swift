@@ -162,7 +162,7 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
             let rightBarButtonItem = UIBarButtonItem(image: PresentationResourcesRootController.navigationComposeIcon(self.presentationData.theme), style: .plain, target: self, action: #selector(self.composePressed))
             rightBarButtonItem.accessibilityLabel = "Compose"
             self.navigationItem.rightBarButtonItem = rightBarButtonItem
-            let backBarButtonItem = UIBarButtonItem(title: title, style: .plain, target: nil, action: nil)
+            let backBarButtonItem = UIBarButtonItem(title: self.presentationData.strings.DialogList_Title, style: .plain, target: nil, action: nil)
             backBarButtonItem.accessibilityLabel = self.presentationData.strings.Common_Back
             self.navigationItem.backBarButtonItem = backBarButtonItem
         } else {
@@ -423,7 +423,7 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
             }
             
             self.tabBarItem.title = title
-            let backBarButtonItem = UIBarButtonItem(title: title, style: .plain, target: nil, action: nil)
+            let backBarButtonItem = UIBarButtonItem(title: self.presentationData.strings.DialogList_Title, style: .plain, target: nil, action: nil)
             backBarButtonItem.accessibilityLabel = self.presentationData.strings.Common_Back
             self.navigationItem.backBarButtonItem = backBarButtonItem
         } else {
