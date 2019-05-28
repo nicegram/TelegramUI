@@ -19,6 +19,7 @@ let niceLocales: [String : [String : String]] = [
     "de": gd(locale: "de"),
     "it": gd(locale: "it"),
     "es": gd(locale: "es"),
+    "uk": gd(locale: "uk"),
     
     // Chinese
     // Simplified
