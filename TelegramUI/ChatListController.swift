@@ -60,7 +60,32 @@ private func fixListNodeScrolling(_ listNode: ListView, searchNode: NavigationBa
     return false
 }
 
-public class ChatListController: TelegramController, KeyShortcutResponder, UIViewControllerPreviewingDelegate {
+public class ChatListController: TelegramController, KeyShortcutResponder, UIViewControllerPreviewingDelegate, TabBarContainedController {
+    
+    public func presentTabBarPreviewingController(sourceNodes: [ASDisplayNode]) {
+        if (self.filter == nil) {
+            return
+        }
+        
+        let controller = TabBarFilterSwitchController(sharedContext: self.context.sharedContext, current: self.filter, available: NiceChatListNodePeersFilter.all, switchToFilter: { [weak self] f in
+            
+            if let accountManager = self?.context.sharedContext.accountManager {
+                let _ = updateNiceSettingsInteractively(accountManager: accountManager, { settings in
+                    var settings = settings
+                    settings.currentFilter = f
+                    return settings
+                }).start()
+            }
+            
+            self?.context.sharedContext.switchToFilter(filter: f, withChatListController: self)
+            }, sourceNodes: sourceNodes)
+        self.switchController = controller
+        self.context.sharedContext.mainWindow?.present(controller, on: .root)
+    }
+    
+    public func updateTabBarPreviewingControllerPresentation(_ update: TabBarContainedControllerPresentationUpdate) {
+    }
+    
     private var validLayout: ContainerViewLayout?
     
     let context: AccountContext
@@ -199,22 +224,12 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
             //.auto for unread navigation
         }
         
-        /*func presentTabBarPreviewingController(sourceNodes: [ASDisplayNode]) {
-            if (self.filter == nil) {
-                return
-            }
-            let controller = TabBarFilterSwitchController(sharedContext: self.context.sharedContext, switchToFilter: { [weak self] f in
-                self?.switchToFilter?(f)
-                }, sourceNodes: sourceNodes)
-            self.switchController = controller
-            self.context.sharedContext.mainWindow?.present(controller, on: .root)
-        }*/
-        
         self.longTapWithTabBar = { [weak self] in
             guard let strongSelf = self else {
                 return
             }
             if (strongSelf.filter != nil) {
+                /*
                 let controller = TabBarFilterSwitchController(sharedContext: strongSelf.context.sharedContext, current: strongSelf.filter, available: NiceChatListNodePeersFilter.all, switchToFilter: { [weak self] f in
                     
                     strongSelf.context.sharedContext.switchToFilter(filter: f, withChatListController: strongSelf)
@@ -222,6 +237,7 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
                     }, sourceNodes: [])
                 strongSelf.switchController = controller
                 strongSelf.context.sharedContext.mainWindow?.present(controller, on: .root)
+                */
                 return
             }
             if strongSelf.chatListDisplayNode.searchDisplayController != nil {

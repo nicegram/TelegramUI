@@ -12,37 +12,29 @@ import SwiftSignalKit
 
 public struct NiceSettings: PreferencesEntry, Equatable {
     public var pinnedMessagesNotification: Bool
-    public var workmode: Bool
     public var showContactsTab: Bool
-    public var bigEmojis: Bool
-    public var transparentEmojisBubble: Bool
+    public var currentFilter: NiceChatListNodePeersFilter
     
     public static var defaultSettings: NiceSettings {
-        return NiceSettings(pinnedMessagesNotification: true, workmode: false, showContactsTab: true, bigEmojis: true, transparentEmojisBubble: false)
+        return NiceSettings(pinnedMessagesNotification: true, showContactsTab: true, currentFilter: .onlyNonMuted)
     }
     
-    init(pinnedMessagesNotification: Bool, workmode: Bool, showContactsTab: Bool, bigEmojis: Bool, transparentEmojisBubble: Bool) {
+    init(pinnedMessagesNotification: Bool, showContactsTab: Bool, currentFilter: NiceChatListNodePeersFilter) {
         self.pinnedMessagesNotification = pinnedMessagesNotification
-        self.workmode = workmode
         self.showContactsTab = showContactsTab
-        self.bigEmojis = bigEmojis
-        self.transparentEmojisBubble = transparentEmojisBubble
+        self.currentFilter = currentFilter
     }
     
     public init(decoder: PostboxDecoder) {
-        self.pinnedMessagesNotification = decoder.decodeBoolForKey("nice:pinndeMessagesNotification", orElse: true)
-        self.workmode = decoder.decodeBoolForKey("nice:workmode", orElse: false)
+        self.pinnedMessagesNotification = decoder.decodeBoolForKey("nice:pinnedMessagesNotification", orElse: true)
         self.showContactsTab = decoder.decodeBoolForKey("nice:showContactsTab", orElse: true)
-        self.bigEmojis = decoder.decodeBoolForKey("nice:bigEmojis", orElse: true)
-        self.transparentEmojisBubble = decoder.decodeBoolForKey("nice:transparentEmojisBubble", orElse: false)
+        self.currentFilter = NiceChatListNodePeersFilter(rawValue: decoder.decodeInt32ForKey("nice:currentFilter", orElse: 1 << 5))
     }
     
     public func encode(_ encoder: PostboxEncoder) {
-        encoder.encodeBool(self.pinnedMessagesNotification, forKey: "nice:pinndeMessagesNotification")
-        encoder.encodeBool(self.workmode, forKey: "nice:workmode")
+        encoder.encodeBool(self.pinnedMessagesNotification, forKey: "nice:pinnedMessagesNotification")
         encoder.encodeBool(self.showContactsTab, forKey: "nice:showContactsTab")
-        encoder.encodeBool(self.bigEmojis, forKey: "nice:bigEmojis")
-        encoder.encodeBool(self.transparentEmojisBubble, forKey: "nice:transparentEmojisBubble")
+        encoder.encodeInt32(self.currentFilter.rawValue, forKey: "nice:currentFilter")
     }
     
     public func isEqual(to: PreferencesEntry) -> Bool {
@@ -54,7 +46,11 @@ public struct NiceSettings: PreferencesEntry, Equatable {
     }
     
     public static func ==(lhs: NiceSettings, rhs: NiceSettings) -> Bool {
-        return lhs.pinnedMessagesNotification == rhs.pinnedMessagesNotification && lhs.workmode == rhs.workmode && lhs.showContactsTab == rhs.showContactsTab && lhs.bigEmojis == rhs.bigEmojis && lhs.transparentEmojisBubble == rhs.transparentEmojisBubble
+        return lhs.pinnedMessagesNotification == rhs.pinnedMessagesNotification && lhs.showContactsTab == rhs.showContactsTab && lhs.currentFilter == rhs.currentFilter
+    }
+    
+    public func withUpdatedCurrentFilter(_ currentFilter: NiceChatListNodePeersFilter) -> NiceSettings {
+        return NiceSettings(pinnedMessagesNotification: self.pinnedMessagesNotification, showContactsTab: self.showContactsTab, currentFilter: currentFilter)
     }
     
     /*

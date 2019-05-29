@@ -53,7 +53,7 @@ public final class TelegramRootController: NavigationController {
     public func addRootControllers(showCallsTab: Bool, showFilteredChatsTab: NiceChatListNodePeersFilter?, showContactsTab: Bool) {
         let tabBarController = TabBarController(navigationBarPresentationData: NavigationBarPresentationData(presentationData: self.presentationData), theme: TabBarControllerTheme(rootControllerTheme: self.presentationData.theme))
         let chatListController = ChatListController(context: self.context, groupId: .root, controlsHistoryPreload: true)
-        let filteredChatListController = ChatListController(context: self.context, groupId: .root, controlsHistoryPreload: true, filter: .onlyNonMuted)
+        let filteredChatListController = ChatListController(context: self.context, groupId: .root, controlsHistoryPreload: true, filter: showFilteredChatsTab ?? .onlyNonMuted)
         chatListController.tabBarItem.badgeValue = self.context.sharedContext.switchingData.chatListBadge
         filteredChatListController.tabBarItem.badgeValue = self.context.sharedContext.switchingData.chatListBadge
         let callListController = CallListController(context: self.context, mode: .tab)

@@ -14,18 +14,12 @@ import TelegramCore
 
 private final class NiceFeaturesControllerArguments {
     let togglePinnedMessage: (Bool) -> Void
-    let toggleWorkmode: (Bool) -> Void
     let toggleShowContactsTab: (Bool) -> Void
-    let toggleBigEmojis: (Bool) -> Void
-    let toggleTransparentEmojisBubble: (Bool) -> Void
 
     
-    init(togglePinnedMessage:@escaping (Bool) -> Void, toggleWorkmode:@escaping (Bool) -> Void, toggleShowContactsTab:@escaping (Bool) -> Void, toggleBigEmojis:@escaping (Bool) -> Void, toggleTransparentEmojisBubble:@escaping (Bool) -> Void) {
+    init(togglePinnedMessage:@escaping (Bool) -> Void, toggleShowContactsTab:@escaping (Bool) -> Void) {
         self.togglePinnedMessage = togglePinnedMessage
-        self.toggleWorkmode = toggleWorkmode
         self.toggleShowContactsTab = toggleShowContactsTab
-        self.toggleBigEmojis = toggleBigEmojis
-        self.toggleTransparentEmojisBubble = toggleTransparentEmojisBubble
     }
 }
 
@@ -235,7 +229,7 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
             return ItemListSectionHeaderItem(theme: theme, text: text, sectionId: self.section)
         case let .workmode(theme, text, value):
             return ItemListSwitchItem(theme: theme, title: text, value: value, enabled: true, sectionId: self.section, style: .blocks, updated: { value in
-                arguments.toggleWorkmode(value)
+                // arguments.toggleWorkmode(value)
             })
         case let .workmodeNotice(theme, text):
             return ItemListTextItem(theme: theme, text: .plain(text), sectionId: self.section)
@@ -298,34 +292,10 @@ public func niceFeaturesController(context: AccountContext) -> ViewController {
             settings.pinnedMessagesNotification = value
             return settings
         }).start()
-    }, toggleWorkmode: { value in
-        let _ = updateNiceSettingsInteractively(accountManager: context.sharedContext.accountManager, { settings in
-            var settings = settings
-            settings.workmode = value
-            return settings
-        }).start()
     }, toggleShowContactsTab: { value in
         let _ = updateNiceSettingsInteractively(accountManager: context.sharedContext.accountManager, { settings in
             var settings = settings
             settings.showContactsTab = value
-            return settings
-        }).start()
-    }, toggleBigEmojis: { value in
-        let _ = updateNiceSettingsInteractively(accountManager: context.sharedContext.accountManager, { settings in
-            var settings = settings
-            settings.bigEmojis = value
-            if (!settings.bigEmojis && settings.transparentEmojisBubble) {
-                settings.transparentEmojisBubble = false
-            }
-            return settings
-        }).start()
-    }, toggleTransparentEmojisBubble: { value in
-        let _ = updateNiceSettingsInteractively(accountManager: context.sharedContext.accountManager, { settings in
-            var settings = settings
-            settings.transparentEmojisBubble = value
-            if (settings.transparentEmojisBubble && !settings.bigEmojis) {
-                settings.bigEmojis = true
-            }
             return settings
         }).start()
     }
