@@ -47,7 +47,8 @@ private func chatMessageGalleryControllerData(context: AccountContext, message: 
             if let file = content.file {
                 galleryMedia = file
             } else if let image = content.image {
-                if ["photo", "document", "video", "gif", "telegram_album"].contains(content.type) {
+                if case .link = mode {
+                } else if ["photo", "document", "video", "gif", "telegram_album"].contains(content.type) {
                     galleryMedia = image
                 }
             }
@@ -128,7 +129,7 @@ private func chatMessageGalleryControllerData(context: AccountContext, message: 
                         return .audio(file)
                     } else if ext == "json", let fileSize = file.size, fileSize < 1024 * 1024 {
                         if let path = context.account.postbox.mediaBox.completedResourcePath(file.resource), let _ = LOTComposition(filePath: path) {
-                            let gallery = GalleryController(context: context, source: .standaloneMessage(message), invertItemOrder: reverseMessageGalleryOrder, streamSingleVideo: stream, fromPlayingVideo: autoplayingVideo, landscape: landscape, timecode: timecode, synchronousLoad: synchronousLoad, replaceRootController: { [weak navigationController] controller, ready in
+                            let gallery = GalleryController(context: context, source: .peerMessagesAtId(message.id), invertItemOrder: reverseMessageGalleryOrder, streamSingleVideo: stream, fromPlayingVideo: autoplayingVideo, landscape: landscape, timecode: timecode, synchronousLoad: synchronousLoad, replaceRootController: { [weak navigationController] controller, ready in
                                 navigationController?.replaceTopController(controller, animated: false, ready: ready)
                                 }, baseNavigationController: navigationController, actionInteraction: actionInteraction)
                             return .gallery(gallery)

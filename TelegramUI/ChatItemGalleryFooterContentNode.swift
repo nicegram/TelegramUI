@@ -439,7 +439,7 @@ final class ChatItemGalleryFooterContentNode: GalleryFooterContentNode, UIScroll
         
         var authorNameText: String?
         
-        if let author = message.author {
+        if let author = message.effectiveAuthor {
             authorNameText = author.displayTitle
         } else if let peer = message.peers[message.id.peerId] {
             authorNameText = peer.displayTitle
@@ -575,7 +575,7 @@ final class ChatItemGalleryFooterContentNode: GalleryFooterContentNode, UIScroll
         
         if let scrubberView = self.scrubberView, scrubberView.superview == self.view {
             panelHeight += 10.0
-            if isLandscape {
+            if isLandscape, case .compact = metrics.widthClass {
                 panelHeight += 14.0
             } else {
                 panelHeight += 34.0

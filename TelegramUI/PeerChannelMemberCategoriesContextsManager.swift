@@ -159,6 +159,16 @@ final class PeerChannelMemberCategoriesContextsManager {
         }
     }
     
+    func externallyRemoved(peerId: PeerId, memberId: PeerId) {
+        self.impl.with { impl in
+            for (contextPeerId, context) in impl.contexts {
+                if contextPeerId == peerId {
+                    context.replayUpdates([(.member(id: memberId, invitedAt: 0, adminInfo: nil, banInfo: nil), nil, nil)])
+                }
+            }
+        }
+    }
+    
     func recent(postbox: Postbox, network: Network, accountPeerId: PeerId, peerId: PeerId, searchQuery: String? = nil, requestUpdate: Bool = true, updated: @escaping (ChannelMemberListState) -> Void) -> (Disposable, PeerChannelMemberCategoryControl?) {
         let key: PeerChannelMemberContextKey
         if let searchQuery = searchQuery {
@@ -237,15 +247,29 @@ final class PeerChannelMemberCategoriesContextsManager {
         }
     }
     
-    func addMember(account: Account, peerId: PeerId, memberId: PeerId) -> Signal<Void, NoError> {
-        return addChannelMember(account: account, peerId: peerId, memberId: memberId)
-        |> map(Optional.init)
-        |> `catch` { _ -> Signal<(ChannelParticipant?, RenderedChannelParticipant)?, NoError> in
-            return .single(nil)
-        }
+    func join(account: Account, peerId: PeerId) -> Signal<Never, JoinChannelError> {
+        return joinChannel(account: account, peerId: peerId)
         |> deliverOnMainQueue
         |> beforeNext { [weak self] result in
-            if let strongSelf = self, let (previous, updated) = result {
+            if let strongSelf = self, let updated = result {
+                strongSelf.impl.with { impl in
+                    for (contextPeerId, context) in impl.contexts {
+                        if peerId == contextPeerId {
+                            context.replayUpdates([(nil, updated, nil)])
+                        }
+                    }
+                }
+            }
+        }
+        |> ignoreValues
+    }
+    
+    func addMember(account: Account, peerId: PeerId, memberId: PeerId) -> Signal<Never, AddChannelMemberError> {
+        return addChannelMember(account: account, peerId: peerId, memberId: memberId)
+        |> deliverOnMainQueue
+        |> beforeNext { [weak self] result in
+            if let strongSelf = self {
+                let (previous, updated) = result
                 strongSelf.impl.with { impl in
                     for (contextPeerId, context) in impl.contexts {
                         if peerId == contextPeerId {
@@ -255,9 +279,7 @@ final class PeerChannelMemberCategoriesContextsManager {
                 }
             }
         }
-        |> mapToSignal { _ -> Signal<Void, NoError> in
-            return .complete()
-        }
+        |> ignoreValues
     }
     
     func addMembers(account: Account, peerId: PeerId, memberIds: [PeerId]) -> Signal<Void, AddChannelMemberError> {

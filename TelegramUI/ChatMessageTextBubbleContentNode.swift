@@ -105,7 +105,7 @@ class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                     sentViaBot = true
                 }
                 
-                let dateText = stringForMessageTimestampStatus(message: item.message, dateTimeFormat: item.presentationData.dateTimeFormat, nameDisplayOrder: item.presentationData.nameDisplayOrder, strings: item.presentationData.strings)
+                let dateText = stringForMessageTimestampStatus(accountPeerId: item.context.account.peerId, message: item.message, dateTimeFormat: item.presentationData.dateTimeFormat, nameDisplayOrder: item.presentationData.nameDisplayOrder, strings: item.presentationData.strings)
                 
                 let statusType: ChatMessageDateAndStatusType?
                 switch position {
@@ -153,11 +153,8 @@ class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                     rawText = item.presentationData.strings.Conversation_UnsupportedMediaPlaceholder
                     messageEntities = [MessageTextEntity(range: 0..<rawText.count, type: .Italic)]
                 } else {
-                    if item.message.isScam {
-                        rawText = "\(item.message.text)\n\n\(item.presentationData.strings.Conversation_ScamWarning)"
-                    } else {
-                        rawText = item.message.text
-                    }
+                    rawText = item.message.text
+                    
                     for attribute in item.message.attributes {
                         if let attribute = attribute as? TextEntitiesMessageAttribute {
                             messageEntities = attribute.entities

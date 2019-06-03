@@ -263,7 +263,7 @@ class ChatMessageStickerItemNode: ChatMessageItemView {
                 }
             }
             
-            let dateText = stringForMessageTimestampStatus(message: item.message, dateTimeFormat: item.presentationData.dateTimeFormat, nameDisplayOrder: item.presentationData.nameDisplayOrder, strings: item.presentationData.strings, format: .regular)
+            let dateText = stringForMessageTimestampStatus(accountPeerId: item.context.account.peerId, message: item.message, dateTimeFormat: item.presentationData.dateTimeFormat, nameDisplayOrder: item.presentationData.nameDisplayOrder, strings: item.presentationData.strings, format: .regular)
             
             let (dateAndStatusSize, dateAndStatusApply) = makeDateAndStatusLayout(item.presentationData, edited, viewCount, dateText, statusType, CGSize(width: params.width, height: CGFloat.greatestFiniteMagnitude))
             
@@ -275,10 +275,10 @@ class ChatMessageStickerItemNode: ChatMessageItemView {
             
             var availableWidth = max(60.0, params.width - params.leftInset - params.rightInset - max(imageSize.width, 160.0) - 20.0 - layoutConstants.bubble.edgeInset * 2.0 - avatarInset - layoutConstants.bubble.contentInsets.left)
             if isEmoji {
-                availableWidth -= 10.0
-                if incoming {
-                    availableWidth -= dateAndStatusSize.width
-                }
+                availableWidth -= 10.0 + 14.0
+                //if incoming {
+                //    availableWidth -= dateAndStatusSize.width
+                //}
             }
             
             for attribute in item.message.attributes {
@@ -304,6 +304,20 @@ class ChatMessageStickerItemNode: ChatMessageItemView {
                     replyInfoApply = makeReplyInfoLayout(item.presentationData, item.presentationData.strings, item.context, .standalone, replyMessage, CGSize(width: availableWidth, height: CGFloat.greatestFiniteMagnitude))
                 } else if let attribute = attribute as? ReplyMarkupMessageAttribute, attribute.flags.contains(.inline), !attribute.rows.isEmpty {
                     replyMarkup = attribute
+                }
+            }
+            
+            if item.message.id.peerId != item.context.account.peerId {
+                for attribute in item.message.attributes {
+                    if let attribute = attribute as? SourceReferenceMessageAttribute {
+                        if let sourcePeer = item.message.peers[attribute.messageId.peerId] {
+                            let inlineBotNameColor = serviceMessageColorComponents(theme: item.presentationData.theme.theme, wallpaper: item.presentationData.theme.wallpaper).primaryText
+                            
+                            let nameString = NSAttributedString(string: sourcePeer.displayTitle, font: inlineBotPrefixFont, textColor: inlineBotNameColor)
+                            
+                            viaBotApply = viaBotLayout(TextNodeLayoutArguments(attributedString: nameString, backgroundColor: nil, maximumNumberOfLines: 1, truncationType: .end, constrainedSize: CGSize(width: max(0, availableWidth), height: CGFloat.greatestFiniteMagnitude), alignment: .natural, cutout: nil, insets: UIEdgeInsets()))
+                        }
+                    }
                 }
             }
             
@@ -389,7 +403,7 @@ class ChatMessageStickerItemNode: ChatMessageItemView {
                             dateOffset.y = 12.0
                         }
                     }
-                    let dateAndStatusFrame = CGRect(origin: CGPoint(x: max(displayLeftInset, updatedImageFrame.maxX - dateOffset.x), y: updatedImageFrame.maxY - dateOffset.y), size: dateAndStatusSize)
+                    let dateAndStatusFrame = CGRect(origin: CGPoint(x: min(layoutSize.width - dateAndStatusSize.width - 14.0, max(displayLeftInset, updatedImageFrame.maxX - dateOffset.x)), y: updatedImageFrame.maxY - dateOffset.y), size: dateAndStatusSize)
                     transition.updateFrame(node: strongSelf.dateAndStatusNode, frame: dateAndStatusFrame)
                     
                     if let updatedShareButtonNode = updatedShareButtonNode {
@@ -436,9 +450,9 @@ class ChatMessageStickerItemNode: ChatMessageItemView {
                             strongSelf.viaBotNode = viaBotNode
                             strongSelf.addSubnode(viaBotNode)
                         }
-                        let viaBotFrame = CGRect(origin: CGPoint(x: (!incoming ? (params.leftInset + layoutConstants.bubble.edgeInset + 10.0) : (params.width - params.rightInset - viaBotLayout.size.width - layoutConstants.bubble.edgeInset - 10.0)), y: 8.0), size: viaBotLayout.size)
+                        let viaBotFrame = CGRect(origin: CGPoint(x: (!incoming ? (params.leftInset + layoutConstants.bubble.edgeInset + 15.0) : (params.width - params.rightInset - viaBotLayout.size.width - layoutConstants.bubble.edgeInset - 14.0)), y: 8.0), size: viaBotLayout.size)
                         viaBotNode.frame = viaBotFrame
-                        strongSelf.replyBackgroundNode?.frame = CGRect(origin: CGPoint(x: viaBotFrame.minX - 4.0, y: viaBotFrame.minY - 2.0), size: CGSize(width: viaBotFrame.size.width + 8.0, height: viaBotFrame.size.height + 5.0))
+                        strongSelf.replyBackgroundNode?.frame = CGRect(origin: CGPoint(x: viaBotFrame.minX - 6.0, y: viaBotFrame.minY - 2.0 - UIScreenPixel), size: CGSize(width: viaBotFrame.size.width + 11.0, height: viaBotFrame.size.height + 5.0))
                     } else if let viaBotNode = strongSelf.viaBotNode {
                         viaBotNode.removeFromSupernode()
                         strongSelf.viaBotNode = nil
@@ -463,7 +477,7 @@ class ChatMessageStickerItemNode: ChatMessageItemView {
                         replyInfoNode.frame = replyInfoFrame
                         strongSelf.replyBackgroundNode?.frame = CGRect(origin: CGPoint(x: replyInfoFrame.minX - 4.0, y: replyInfoFrame.minY - viaBotSize.height - 2.0), size: CGSize(width: max(replyInfoFrame.size.width, viaBotSize.width) + 8.0, height: replyInfoFrame.size.height + viaBotSize.height + 5.0))
                         
-                        if let selectionState = item.controllerInteraction.selectionState, isEmoji {
+                        if let _ = item.controllerInteraction.selectionState, isEmoji {
                             replyInfoNode.alpha = 0.0
                             strongSelf.replyBackgroundNode?.alpha = 0.0
                         }
@@ -549,11 +563,20 @@ class ChatMessageStickerItemNode: ChatMessageItemView {
                         case .tap:
                             if let avatarNode = self.accessoryItemNode as? ChatMessageAvatarAccessoryItemNode, avatarNode.frame.contains(location) {
                                 if let item = self.item, let author = item.content.firstMessage.author {
-                                    let navigate: ChatControllerInteractionNavigateToPeer
+                                    var openPeerId = item.effectiveAuthorId ?? author.id
+                                    var navigate: ChatControllerInteractionNavigateToPeer
+                                    
                                     if item.content.firstMessage.id.peerId == item.context.account.peerId {
                                         navigate = .chat(textInputState: nil, messageId: nil)
                                     } else {
                                         navigate = .info
+                                    }
+                                    
+                                    for attribute in item.content.firstMessage.attributes {
+                                        if let attribute = attribute as? SourceReferenceMessageAttribute {
+                                            openPeerId = attribute.messageId.peerId
+                                            navigate = .chat(textInputState: nil, messageId: attribute.messageId)
+                                        }
                                     }
                                     
                                     if item.effectiveAuthorId?.namespace == Namespaces.Peer.Empty {
@@ -566,7 +589,7 @@ class ChatMessageStickerItemNode: ChatMessageItemView {
                                                 return
                                             }
                                         }
-                                        item.controllerInteraction.openPeer(item.effectiveAuthorId ?? author.id, navigate, item.message)
+                                        item.controllerInteraction.openPeer(openPeerId, navigate, item.message)
                                     }
                                 }
                                 return
@@ -759,11 +782,12 @@ class ChatMessageStickerItemNode: ChatMessageItemView {
             
             if let replyInfoNode = self.replyInfoNode, isEmoji && !incoming {
                 let alpha: CGFloat = 0.0
+                let previousAlpha = replyInfoNode.alpha
                 replyInfoNode.alpha = alpha
                 self.replyBackgroundNode?.alpha = alpha
                 if animated {
-                    replyInfoNode.layer.animateAlpha(from: 1.0 - alpha, to: alpha, duration: 0.3)
-                    self.replyBackgroundNode?.layer.animateAlpha(from: 1.0 - alpha, to: alpha, duration: 0.3)
+                    replyInfoNode.layer.animateAlpha(from: previousAlpha, to: alpha, duration: 0.3)
+                    self.replyBackgroundNode?.layer.animateAlpha(from: previousAlpha, to: alpha, duration: 0.3)
                 }
             }
         } else {
@@ -787,11 +811,12 @@ class ChatMessageStickerItemNode: ChatMessageItemView {
             
             if let replyInfoNode = self.replyInfoNode, isEmoji && !incoming {
                 let alpha: CGFloat = 1.0
+                let previousAlpha = replyInfoNode.alpha
                 replyInfoNode.alpha = alpha
                 self.replyBackgroundNode?.alpha = alpha
                 if animated {
-                    replyInfoNode.layer.animateAlpha(from: 1.0 - alpha, to: alpha, duration: 0.3)
-                    self.replyBackgroundNode?.layer.animateAlpha(from: 1.0 - alpha, to: alpha, duration: 0.3)
+                    replyInfoNode.layer.animateAlpha(from: previousAlpha, to: alpha, duration: 0.3)
+                    self.replyBackgroundNode?.layer.animateAlpha(from: previousAlpha, to: alpha, duration: 0.3)
                 }
             }
         }

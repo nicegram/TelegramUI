@@ -24,6 +24,7 @@ private final class UserInfoControllerArguments {
     let displayCopyContextMenu: (UserInfoEntryTag, String) -> Void
     let call: () -> Void
     let openCallMenu: (String) -> Void
+    let requestPhoneNumber: () -> Void
     let aboutLinkAction: (TextLinkItemActionType, TextLinkItem) -> Void
     let displayAboutContextMenu: (String) -> Void
     let openEncryptionKey: (SecretChatKeyFingerprint) -> Void
@@ -34,7 +35,7 @@ private final class UserInfoControllerArguments {
     let botPrivacy: () -> Void
     let report: () -> Void
     
-    init(account: Account, avatarAndNameInfoContext: ItemListAvatarAndNameInfoItemContext, updateEditingName: @escaping (ItemListAvatarAndNameInfoItemName) -> Void, tapAvatarAction: @escaping () -> Void, openChat: @escaping () -> Void, addContact: @escaping () -> Void, shareContact: @escaping () -> Void, shareMyContact: @escaping () -> Void, startSecretChat: @escaping () -> Void, changeNotificationMuteSettings: @escaping () -> Void, openSharedMedia: @escaping () -> Void, openGroupsInCommon: @escaping () -> Void, updatePeerBlocked: @escaping (Bool) -> Void, deleteContact: @escaping () -> Void, displayUsernameContextMenu: @escaping (String) -> Void, displayCopyContextMenu: @escaping (UserInfoEntryTag, String) -> Void, call: @escaping () -> Void, openCallMenu: @escaping (String) -> Void, aboutLinkAction: @escaping (TextLinkItemActionType, TextLinkItem) -> Void, displayAboutContextMenu: @escaping (String) -> Void, openEncryptionKey: @escaping (SecretChatKeyFingerprint) -> Void, addBotToGroup: @escaping () -> Void, shareBot: @escaping () -> Void, botSettings: @escaping () -> Void, botHelp: @escaping () -> Void, botPrivacy: @escaping () -> Void, report: @escaping () -> Void) {
+    init(account: Account, avatarAndNameInfoContext: ItemListAvatarAndNameInfoItemContext, updateEditingName: @escaping (ItemListAvatarAndNameInfoItemName) -> Void, tapAvatarAction: @escaping () -> Void, openChat: @escaping () -> Void, addContact: @escaping () -> Void, shareContact: @escaping () -> Void, shareMyContact: @escaping () -> Void, startSecretChat: @escaping () -> Void, changeNotificationMuteSettings: @escaping () -> Void, openSharedMedia: @escaping () -> Void, openGroupsInCommon: @escaping () -> Void, updatePeerBlocked: @escaping (Bool) -> Void, deleteContact: @escaping () -> Void, displayUsernameContextMenu: @escaping (String) -> Void, displayCopyContextMenu: @escaping (UserInfoEntryTag, String) -> Void, call: @escaping () -> Void, openCallMenu: @escaping (String) -> Void, requestPhoneNumber: @escaping () -> Void, aboutLinkAction: @escaping (TextLinkItemActionType, TextLinkItem) -> Void, displayAboutContextMenu: @escaping (String) -> Void, openEncryptionKey: @escaping (SecretChatKeyFingerprint) -> Void, addBotToGroup: @escaping () -> Void, shareBot: @escaping () -> Void, botSettings: @escaping () -> Void, botHelp: @escaping () -> Void, botPrivacy: @escaping () -> Void, report: @escaping () -> Void) {
         self.account = account
         self.avatarAndNameInfoContext = avatarAndNameInfoContext
         self.updateEditingName = updateEditingName
@@ -54,6 +55,7 @@ private final class UserInfoControllerArguments {
         self.displayCopyContextMenu = displayCopyContextMenu
         self.call = call
         self.openCallMenu = openCallMenu
+        self.requestPhoneNumber = requestPhoneNumber
         self.aboutLinkAction = aboutLinkAction
         self.displayAboutContextMenu = displayAboutContextMenu
         self.openEncryptionKey = openEncryptionKey
@@ -95,6 +97,7 @@ private enum UserInfoEntry: ItemListNodeEntry {
     case calls(PresentationTheme, PresentationStrings, PresentationDateTimeFormat, messages: [Message])
     case about(PresentationTheme, Peer, String, String)
     case phoneNumber(PresentationTheme, Int, String, String, Bool)
+    case requestPhoneNumber(PresentationTheme, String, String)
     case userName(PresentationTheme, String, String)
     case sendMessage(PresentationTheme, String)
     case addContact(PresentationTheme, String)
@@ -115,7 +118,7 @@ private enum UserInfoEntry: ItemListNodeEntry {
     
     var section: ItemListSectionId {
         switch self {
-            case .info, .calls, .about, .phoneNumber, .userName:
+            case .info, .calls, .about, .phoneNumber, .requestPhoneNumber, .userName:
                 return UserInfoSection.info.rawValue
             case .sendMessage, .addContact, .shareContact, .shareMyContact, .startSecretChat, .botAddToGroup, .botShare:
                 return UserInfoSection.actions.rawValue
@@ -199,6 +202,12 @@ private enum UserInfoEntry: ItemListNodeEntry {
                 }
             case let .phoneNumber(lhsTheme, lhsIndex, lhsLabel, lhsValue, lhsMain):
                 if case let .phoneNumber(rhsTheme, rhsIndex, rhsLabel, rhsValue, rhsMain) = rhs, lhsTheme === rhsTheme, lhsIndex == rhsIndex, lhsLabel == rhsLabel, lhsValue == rhsValue, lhsMain == rhsMain {
+                    return true
+                } else {
+                    return false
+                }
+            case let .requestPhoneNumber(lhsTheme, lhsLabel, lhsValue):
+                if case let .requestPhoneNumber(rhsTheme, rhsLabel, rhsValue) = rhs, lhsTheme === rhsTheme, lhsLabel == rhsLabel, lhsValue == rhsValue {
                     return true
                 } else {
                     return false
@@ -316,6 +325,8 @@ private enum UserInfoEntry: ItemListNodeEntry {
                 return 1
             case let .phoneNumber(_, index, _, _, _):
                 return 2 + index
+            case .requestPhoneNumber:
+                return 998
             case .about:
                 return 999
             case .userName:
@@ -387,6 +398,10 @@ private enum UserInfoEntry: ItemListNodeEntry {
                 }, longTapAction: {
                     arguments.displayCopyContextMenu(.phoneNumber, value)
                 }, tag: UserInfoEntryTag.phoneNumber)
+            case let .requestPhoneNumber(theme, label, value):
+                return ItemListTextWithLabelItem(theme: theme, label: label, text: value, textColor: .accent, enabledEntitiyTypes: [], multiline: false, sectionId: self.section, action: {
+                    arguments.requestPhoneNumber()
+                })
             case let .userName(theme, text, value):
                 return ItemListTextWithLabelItem(theme: theme, label: text, text: "@\(value)", textColor: .accent, enabledEntitiyTypes: [], multiline: false, sectionId: self.section, action: {
                     arguments.displayUsernameContextMenu("@\(value)")
@@ -602,16 +617,26 @@ private func userInfoEntries(account: Account, presentationData: PresentationDat
                 index += 1
             }
         }
+    } else {
+        //entries.append(UserInfoEntry.requestPhoneNumber(presentationData.theme, "phone", "Request Number"))
     }
     
-    if let cachedUserData = cachedPeerData as? CachedUserData, let about = cachedUserData.about, !about.isEmpty {
-        let title: String
-        if let peer = peer as? TelegramUser, let _ = peer.botInfo {
-            title = presentationData.strings.Profile_BotInfo
+    let aboutTitle: String
+    if let _ = user.botInfo {
+        aboutTitle = presentationData.strings.Profile_BotInfo
+    } else {
+        aboutTitle = presentationData.strings.Profile_About
+    }
+    if user.isScam {
+        let aboutValue: String
+        if let _ = user.botInfo {
+            aboutValue = presentationData.strings.UserInfo_ScamBotWarning
         } else {
-            title = presentationData.strings.Profile_About
+            aboutValue = presentationData.strings.UserInfo_ScamUserWarning
         }
-        entries.append(UserInfoEntry.about(presentationData.theme, peer, title, about))
+        entries.append(UserInfoEntry.about(presentationData.theme, peer, aboutTitle, aboutValue))
+    } else if let cachedUserData = cachedPeerData as? CachedUserData, let about = cachedUserData.about, !about.isEmpty {
+        entries.append(UserInfoEntry.about(presentationData.theme, peer, aboutTitle, about))
     }
     
     if !isEditing {
@@ -768,11 +793,12 @@ public func userInfoController(context: AccountContext, peerId: PeerId, mode: Us
     var aboutLinkActionImpl: ((TextLinkItemActionType, TextLinkItem) -> Void)?
     var displayAboutContextMenuImpl: ((String) -> Void)?
     var displayCopyContextMenuImpl: ((UserInfoEntryTag, String) -> Void)?
+    var popToRootImpl: (() -> Void)?
     
     let cachedAvatarEntries = Atomic<Promise<[AvatarGalleryEntry]>?>(value: nil)
     
     let peerView = Promise<(PeerView, CachedPeerData?)>()
-    peerView.set(context.account.viewTracker.peerView(peerId) |> mapToSignal({ view -> Signal<(PeerView, CachedPeerData?), NoError> in
+    peerView.set(context.account.viewTracker.peerView(peerId, updateData: true) |> mapToSignal({ view -> Signal<(PeerView, CachedPeerData?), NoError> in
         if peerId.namespace == Namespaces.Peer.SecretChat {
             if let peer = peerViewMainPeer(view) {
                 return context.account.viewTracker.peerView(peer.id) |> map({ secretChatView -> (PeerView, CachedPeerData?) in
@@ -916,15 +942,60 @@ public func userInfoController(context: AccountContext, peerId: PeerId, mode: Us
                     openChatImpl?()
                 }
             } else {
-                let text: String
                 if value {
-                    text = presentationData.strings.UserInfo_BlockConfirmation(peer.displayTitle).0
+                    let presentationData = context.sharedContext.currentPresentationData.with { $0 }
+                    let controller = ActionSheetController(presentationTheme: presentationData.theme)
+                    let dismissAction: () -> Void = { [weak controller] in
+                        controller?.dismissAnimated()
+                    }
+                    var reportSpam = false
+                    var deleteChat = true
+                    controller.setItemGroups([
+                        ActionSheetItemGroup(items: [
+                            ActionSheetTextItem(title: presentationData.strings.UserInfo_BlockConfirmationTitle(peer.compactDisplayTitle).0),
+                            ActionSheetCheckboxItem(title: presentationData.strings.Conversation_Moderate_Report, label: "", value: reportSpam, action: { [weak controller] checkValue in
+                                reportSpam = checkValue
+                                controller?.updateItem(groupIndex: 0, itemIndex: 1, { item in
+                                    if let item = item as? ActionSheetCheckboxItem {
+                                        return ActionSheetCheckboxItem(title: item.title, label: item.label, value: !item.value, action: item.action)
+                                    }
+                                    return item
+                                })
+                            }),
+                            ActionSheetCheckboxItem(title: presentationData.strings.ReportSpam_DeleteThisChat, label: "", value: deleteChat, action: { [weak controller] checkValue in
+                                deleteChat = checkValue
+                                controller?.updateItem(groupIndex: 0, itemIndex: 2, { item in
+                                    if let item = item as? ActionSheetCheckboxItem {
+                                        return ActionSheetCheckboxItem(title: item.title, label: item.label, value: !item.value, action: item.action)
+                                    }
+                                    return item
+                                })
+                            }),
+                            ActionSheetButtonItem(title: presentationData.strings.UserInfo_BlockActionTitle(peer.compactDisplayTitle).0, color: .destructive, action: {
+                                dismissAction()
+                                updatePeerBlockedDisposable.set(requestUpdatePeerIsBlocked(account: context.account, peerId: peer.id, isBlocked: true).start())
+                                if deleteChat {
+                                    let _ = removePeerChat(account: context.account, peerId: peerId, reportChatSpam: reportSpam).start()
+                                    popToRootImpl?()
+                                } else if reportSpam {
+                                    let _ = reportPeer(account: context.account, peerId: peerId, reason: .spam).start()
+                                }
+                            })
+                        ]),
+                        ActionSheetItemGroup(items: [ActionSheetButtonItem(title: presentationData.strings.Common_Cancel, action: { dismissAction() })])
+                    ])
+                    presentControllerImpl?(controller, ViewControllerPresentationArguments(presentationAnimation: .modalSheet))
                 } else {
-                    text = presentationData.strings.UserInfo_UnblockConfirmation(peer.displayTitle).0
+                    let text: String
+                    if value {
+                        text = presentationData.strings.UserInfo_BlockConfirmation(peer.displayTitle).0
+                    } else {
+                        text = presentationData.strings.UserInfo_UnblockConfirmation(peer.displayTitle).0
+                    }
+                    presentControllerImpl?(textAlertController(context: context, title: nil, text: text, actions: [TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_No, action: {}), TextAlertAction(type: .genericAction, title: presentationData.strings.Common_Yes, action: {
+                        updatePeerBlockedDisposable.set(requestUpdatePeerIsBlocked(account: context.account, peerId: peer.id, isBlocked: value).start())
+                    })]), nil)
                 }
-                presentControllerImpl?(textAlertController(context: context, title: nil, text: text, actions: [TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_No, action: {}), TextAlertAction(type: .genericAction, title: presentationData.strings.Common_Yes, action: {
-                    updatePeerBlockedDisposable.set(requestUpdatePeerIsBlocked(account: context.account, peerId: peer.id, isBlocked: value).start())
-                })]), nil)
             }
         })
     }, deleteContact: {
@@ -982,6 +1053,11 @@ public func userInfoController(context: AccountContext, peerId: PeerId, mode: Us
             } else {
                 context.sharedContext.applicationBindings.openUrl("tel:\(formatPhoneNumber(number).replacingOccurrences(of: " ", with: ""))")
             }
+        })
+    }, requestPhoneNumber: {
+        let _ = (requestPhoneNumber(account: context.account, peerId: peerId)
+        |> deliverOnMainQueue).start(completed: {
+            
         })
     }, aboutLinkAction: { action, itemLink in
         aboutLinkActionImpl?(action, itemLink)
@@ -1373,6 +1449,10 @@ public func userInfoController(context: AccountContext, peerId: PeerId, mode: Us
                 }))
             }
         }
+    }
+    
+    popToRootImpl = { [weak controller] in
+        (controller?.navigationController as? NavigationController)?.popToRoot(animated: true)
     }
     
     controller.didAppear = { [weak controller] firstTime in

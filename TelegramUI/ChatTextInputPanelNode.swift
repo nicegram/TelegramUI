@@ -1329,16 +1329,16 @@ class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDelegate {
     }
     
     func editableTextNodeTarget(forAction action: Selector) -> ASEditableTextNodeTargetForAction? {
-        if action == Selector(("_showTextStyleOptions:")) {
+       if action == Selector(("_showTextStyleOptions:")) {
             if case .general = self.inputMenu.state {
-                if let textInputNode = self.textInputNode, textInputNode.attributedText == nil || textInputNode.attributedText!.length == 0 {
+                if let textInputNode = self.textInputNode, textInputNode.attributedText == nil || textInputNode.attributedText!.length == 0 || textInputNode.selectedRange.length == 0 {
                     return ASEditableTextNodeTargetForAction(target: nil)
                 }
                 return ASEditableTextNodeTargetForAction(target: self)
             } else {
                 return ASEditableTextNodeTargetForAction(target: nil)
             }
-        } else if action == #selector(self.formatAttributesBold(_:)) || action == #selector(self.formatAttributesItalic(_:)) || action == #selector(self.formatAttributesMonospace(_:)) || action == #selector(self.formatAttributesUrl(_:)) {
+        } else if action == #selector(self.formatAttributesBold(_:)) || action == #selector(self.formatAttributesItalic(_:)) || action == #selector(self.formatAttributesMonospace(_:)) || action == #selector(self.formatAttributesLink(_:)) {
             if case .format = self.inputMenu.state {
                 return ASEditableTextNodeTargetForAction(target: self)
             } else {
@@ -1376,8 +1376,9 @@ class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDelegate {
         }
     }
     
-    @objc func formatAttributesUrl(_ sender: Any) {
-        self.interfaceInteraction?.askUrlEntity()
+    @objc func formatAttributesLink(_ sender: Any) {
+        self.inputMenu.back()
+        self.interfaceInteraction?.openLinkEditing()
     }
     
     @objc func editableTextNode(_ editableTextNode: ASEditableTextNode, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
@@ -1413,8 +1414,35 @@ class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDelegate {
         return true
     }
     
+    @objc func editableTextNodeShouldCopy(_ editableTextNode: ASEditableTextNode) -> Bool {
+        self.interfaceInteraction?.updateTextInputStateAndMode { current, inputMode in
+            storeInputTextInPasteboard(current.inputText.attributedSubstring(from: NSMakeRange(current.selectionRange.lowerBound, current.selectionRange.count)))
+            return (current, inputMode)
+        }
+        return false
+    }
+    
     @objc func editableTextNodeShouldPaste(_ editableTextNode: ASEditableTextNode) -> Bool {
         let pasteboard = UIPasteboard.general
+        
+        var attributedString: NSAttributedString?
+        if let data = pasteboard.data(forPasteboardType: kUTTypeRTF as String) {
+            attributedString = chatInputStateStringFromRTF(data, type: NSAttributedString.DocumentType.rtf)
+        } else if let data = pasteboard.data(forPasteboardType: "com.apple.flat-rtfd") {
+            attributedString = chatInputStateStringFromRTF(data, type: NSAttributedString.DocumentType.rtfd)
+        }
+        
+        if let attributedString = attributedString {
+            self.interfaceInteraction?.updateTextInputStateAndMode { current, inputMode in
+                if let inputText = current.inputText.mutableCopy() as? NSMutableAttributedString {
+                    inputText.replaceCharacters(in: NSMakeRange(current.selectionRange.lowerBound, current.selectionRange.count), with: attributedString)
+                    return (ChatTextInputState(inputText: inputText), inputMode)
+                } else {
+                    return (ChatTextInputState(inputText: attributedString), inputMode)
+                }
+            }
+            return false
+        }
         
         var images: [UIImage] = []
         if let data = pasteboard.data(forPasteboardType: "com.compuserve.gif") {

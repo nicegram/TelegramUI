@@ -53,6 +53,8 @@ final class PasscodeEntryControllerNode: ASDisplayNode {
         self.statusBar = statusBar
         
         self.backgroundNode = ASImageNode()
+        self.backgroundNode.contentMode = .scaleToFill
+
         self.iconNode = PasscodeLockIconNode()
         self.titleNode = PasscodeEntryLabelNode()
         self.inputFieldNode = PasscodeEntryInputFieldNode(color: .white, accentColor: .white, fieldType: passcodeType, keyboardAppearance: .dark, useCustomNumpad: true)
@@ -158,15 +160,24 @@ final class PasscodeEntryControllerNode: ASDisplayNode {
             return
         }
         
+        var size = validLayout.size
+        if case .compact = validLayout.metrics.widthClass, size.width > size.height {
+            size = CGSize(width: size.height, height: size.width)
+        }
+        
+        if let background = self.background, background.size == size {
+            return
+        }
+        
         switch self.wallpaper {
             case .image, .file:
                 if let image = chatControllerBackgroundImage(wallpaper: self.wallpaper, mediaBox: self.context.sharedContext.accountManager.mediaBox, composed: false) {
-                    self.background = ImageBasedPasscodeBackground(image: image, size: validLayout.size)
+                    self.background = ImageBasedPasscodeBackground(image: image, size: size)
                 } else {
-                    self.background = DefaultPasscodeBackground(size: validLayout.size)
+                    self.background = GradientPasscodeBackground(size: size, backgroundColors: self.theme.passcode.backgroundColors, buttonColor: self.theme.passcode.buttonColor)
                 }
             default:
-                self.background = DefaultPasscodeBackground(size: validLayout.size)
+                self.background = GradientPasscodeBackground(size: size, backgroundColors: self.theme.passcode.backgroundColors, buttonColor: self.theme.passcode.buttonColor)
         }
         
         if let background = self.background {
@@ -313,12 +324,9 @@ final class PasscodeEntryControllerNode: ASDisplayNode {
     }
     
     func containerLayoutUpdated(_ layout: ContainerViewLayout, navigationBarHeight: CGFloat, transition: ContainedViewLayoutTransition) {
-        let hadValidLayout = self.validLayout != nil
         self.validLayout = layout
         
-        if !hadValidLayout {
-            self.updateBackground()
-        }
+        self.updateBackground()
         
         if layout.size.width == 320.0 {
             self.iconNode.alpha = 0.0
@@ -350,23 +358,29 @@ final class PasscodeEntryControllerNode: ASDisplayNode {
         transition.updateFrame(node: self.keyboardNode, frame: CGRect(origin: CGPoint(), size: layout.size))
         
         switch self.passcodeType {
-            case .digits6, .digits4:
-                self.keyboardNode.alpha = 1.0
-                self.deleteButtonNode.alpha = 1.0
-            case .alphanumeric:
-                self.keyboardNode.alpha = 0.0
-                self.deleteButtonNode.alpha = 0.0
+        case .digits6, .digits4:
+            self.keyboardNode.alpha = 1.0
+            self.deleteButtonNode.alpha = 1.0
+        case .alphanumeric:
+            self.keyboardNode.alpha = 0.0
+            self.deleteButtonNode.alpha = 0.0
         }
         
+        let bottomInset = layout.inputHeight ?? 0.0
+        
         let cancelSize = self.cancelButtonNode.measure(layout.size)
-        transition.updateFrame(node: self.cancelButtonNode, frame: CGRect(origin: CGPoint(x: floor(keyboardFrame.minX + keyboardButtonSize.width / 2.0 - cancelSize.width / 2.0), y: layout.size.height - layout.intrinsicInsets.bottom - cancelSize.height - passcodeLayout.keyboard.deleteOffset), size: cancelSize))
+        var cancelY: CGFloat = layout.size.height - layout.intrinsicInsets.bottom - cancelSize.height - passcodeLayout.keyboard.deleteOffset
+        if bottomInset > 0 && self.keyboardNode.alpha < 1.0 {
+            cancelY = layout.size.height - bottomInset - cancelSize.height - 20.0
+        }
+        
+        transition.updateFrame(node: self.cancelButtonNode, frame: CGRect(origin: CGPoint(x: floor(keyboardFrame.minX + keyboardButtonSize.width / 2.0 - cancelSize.width / 2.0), y: cancelY), size: cancelSize))
         
         let deleteSize = self.deleteButtonNode.measure(layout.size)
         transition.updateFrame(node: self.deleteButtonNode, frame: CGRect(origin: CGPoint(x: floor(keyboardFrame.maxX - keyboardButtonSize.width / 2.0 - deleteSize.width / 2.0), y: layout.size.height - layout.intrinsicInsets.bottom - deleteSize.height - passcodeLayout.keyboard.deleteOffset), size: deleteSize))
         
         if let biometricIcon = self.biometricButtonNode.image(for: .normal) {
             var biometricY: CGFloat = 0.0
-            let bottomInset = layout.inputHeight ?? 0.0
             if bottomInset > 0 && self.keyboardNode.alpha < 1.0 {
                 biometricY = inputFieldFrame.maxY + floor((layout.size.height - bottomInset - inputFieldFrame.maxY - biometricIcon.size.height) / 2.0)
             } else {

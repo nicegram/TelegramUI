@@ -136,6 +136,7 @@ func inputPanelForChatPresentationIntefaceState(_ chatPresentationInterfaceState
                             return currentPanel
                         } else {
                             let panel = ChatChannelSubscriberInputPanelNode()
+                            panel.interfaceInteraction = interfaceInteraction
                             panel.context = context
                             return panel
                         }
@@ -147,6 +148,7 @@ func inputPanelForChatPresentationIntefaceState(_ chatPresentationInterfaceState
                                 return currentPanel
                             } else {
                                 let panel = ChatChannelSubscriberInputPanelNode()
+                                panel.interfaceInteraction = interfaceInteraction
                                 panel.context = context
                                 return panel
                             }

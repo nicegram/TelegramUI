@@ -33,7 +33,7 @@ private enum ChatTextInputStateTextAttributeType: PostboxCoding, Equatable {
     case italic
     case monospace
     case textMention(PeerId)
-    case url(String)
+    case textUrl(String)
     
     init(decoder: PostboxDecoder) {
         switch decoder.decodeInt32ForKey("t", orElse: 0) {
@@ -46,7 +46,7 @@ private enum ChatTextInputStateTextAttributeType: PostboxCoding, Equatable {
             case 3:
                 self = .textMention(PeerId(decoder.decodeInt64ForKey("peerId", orElse: 0)))
             case 4:
-                self = .url(String(decoder.decodeStringForKey("url", orElse: "")))
+                self = .textUrl(decoder.decodeStringForKey("url", orElse: ""))
             default:
                 assertionFailure()
                 self = .bold
@@ -64,9 +64,9 @@ private enum ChatTextInputStateTextAttributeType: PostboxCoding, Equatable {
             case let .textMention(id):
                 encoder.encodeInt32(3, forKey: "t")
                 encoder.encodeInt64(id.toInt64(), forKey: "peerId")
-            case let .url(string):
+            case let .textUrl(url):
                 encoder.encodeInt32(4, forKey: "t")
-                encoder.encodeString(string, forKey: "url")
+                encoder.encodeString(url, forKey: "url")
         }
     }
     
@@ -96,8 +96,8 @@ private enum ChatTextInputStateTextAttributeType: PostboxCoding, Equatable {
                 } else {
                     return false
                 }
-            case let .url(string):
-                if case .url(string) = rhs {
+            case let .textUrl(url):
+                if case .textUrl(url) = rhs {
                     return true
                 } else {
                     return false
@@ -158,8 +158,8 @@ private struct ChatTextInputStateText: PostboxCoding, Equatable {
                     parsedAttributes.append(ChatTextInputStateTextAttribute(type: .monospace, range: range.location ..< (range.location + range.length)))
                 } else if key == ChatTextInputAttributes.textMention, let value = value as? ChatTextInputTextMentionAttribute {
                     parsedAttributes.append(ChatTextInputStateTextAttribute(type: .textMention(value.peerId), range: range.location ..< (range.location + range.length)))
-                } else if key == ChatTextInputAttributes.url, let value = value as? ChatTextInputUrlAttribute {
-                    parsedAttributes.append(ChatTextInputStateTextAttribute(type: .url(value.url), range: range.location ..< (range.location + range.length)))
+                } else if key == ChatTextInputAttributes.textUrl, let value = value as? ChatTextInputTextUrlAttribute {
+                    parsedAttributes.append(ChatTextInputStateTextAttribute(type: .textUrl(value.url), range: range.location ..< (range.location + range.length)))
                 }
             }
         })
@@ -192,9 +192,8 @@ private struct ChatTextInputStateText: PostboxCoding, Equatable {
                     result.addAttribute(ChatTextInputAttributes.monospace, value: true as NSNumber, range: NSRange(location: attribute.range.lowerBound, length: attribute.range.count))
                 case let .textMention(id):
                     result.addAttribute(ChatTextInputAttributes.textMention, value: ChatTextInputTextMentionAttribute(peerId: id), range: NSRange(location: attribute.range.lowerBound, length: attribute.range.count))
-                case let .url(string):
-                    result.addAttribute(ChatTextInputAttributes.url, value: ChatTextInputUrlAttribute(url: string), range: NSRange(location: attribute.range.lowerBound, length: attribute.range.count))
-                
+                case let .textUrl(url):
+                    result.addAttribute(ChatTextInputAttributes.textUrl, value: ChatTextInputTextUrlAttribute(url: url), range: NSRange(location: attribute.range.lowerBound, length: attribute.range.count))
             }
         }
         return result

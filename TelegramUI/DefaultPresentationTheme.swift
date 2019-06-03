@@ -52,6 +52,11 @@ private func makeDefaultPresentationTheme(accentColor: UIColor, serviceBackgroun
         introDotColor: UIColor(rgb: 0xd9d9d9)
     )
     
+    let passcode = PresentationThemePasscode(
+        backgroundColors: (UIColor(rgb: 0x46739e), UIColor(rgb: 0x2a5982)),
+        buttonColor: nil
+    )
+    
     let rootController = PresentationThemeRootController(
         statusBar: rootStatusBar,
         tabBar: rootTabBar,
@@ -190,10 +195,12 @@ private func makeDefaultPresentationTheme(accentColor: UIColor, serviceBackgroun
         incomingSecondaryTextColor: UIColor(rgb: 0x525252, alpha: 0.6),
         incomingLinkTextColor: UIColor(rgb: 0x004bad),
         incomingLinkHighlightColor: accentColor.withAlphaComponent(0.3),
+        incomingScamColor: destructiveColor,
         outgoingPrimaryTextColor: UIColor(rgb: 0x000000),
         outgoingSecondaryTextColor: UIColor(rgb: 0x008c09, alpha: 0.8),
         outgoingLinkTextColor: UIColor(rgb: 0x004bad),
         outgoingLinkHighlightColor: accentColor.withAlphaComponent(0.3),
+        outgoingScamColor: destructiveColor,
         infoPrimaryTextColor: UIColor(rgb: 0x000000),
         infoLinkTextColor: UIColor(rgb: 0x004bad),
         incomingTextHighlightColor: UIColor(rgb: 0xffe438),
@@ -248,10 +255,12 @@ private func makeDefaultPresentationTheme(accentColor: UIColor, serviceBackgroun
         incomingSecondaryTextColor: UIColor(rgb: 0x525252, alpha: 0.6),
         incomingLinkTextColor: UIColor(rgb: 0x004bad),
         incomingLinkHighlightColor: accentColor.withAlphaComponent(0.3),
+        incomingScamColor: destructiveColor,
         outgoingPrimaryTextColor: UIColor(rgb: 0xffffff),
         outgoingSecondaryTextColor: UIColor(rgb: 0xffffff, alpha: 0.6),
         outgoingLinkTextColor: UIColor(rgb: 0xffffff),
         outgoingLinkHighlightColor: UIColor(rgb: 0xffffff, alpha: 0.3),
+        outgoingScamColor: UIColor(rgb: 0xffffff),
         infoPrimaryTextColor: UIColor(rgb: 0x000000),
         infoLinkTextColor: UIColor(rgb: 0x004bad),
         incomingTextHighlightColor: UIColor(rgb: 0xffe438),
@@ -299,7 +308,7 @@ private func makeDefaultPresentationTheme(accentColor: UIColor, serviceBackgroun
     )
     
     let serviceMessage = PresentationThemeServiceMessage(
-        components: PresentationThemeServiceMessageColor(withDefaultWallpaper: PresentationThemeServiceMessageColorComponents(fill: UIColor(rgb: 0x748391, alpha: 0.45), primaryText: .white, linkHighlight: UIColor(rgb: 0x748391, alpha: 0.25), dateFillStatic: UIColor(rgb: 0x748391, alpha: 0.45), dateFillFloating: UIColor(rgb: 0x939fab, alpha: 0.5)), withCustomWallpaper: PresentationThemeServiceMessageColorComponents(fill: serviceBackgroundColor, primaryText: .white, linkHighlight: UIColor(rgb: 0x748391, alpha: 0.25), dateFillStatic: serviceBackgroundColor, dateFillFloating: serviceBackgroundColor.withAlphaComponent(serviceBackgroundColor.alpha * 0.6667))),
+        components: PresentationThemeServiceMessageColor(withDefaultWallpaper: PresentationThemeServiceMessageColorComponents(fill: UIColor(rgb: 0x748391, alpha: 0.45), primaryText: .white, linkHighlight: UIColor(rgb: 0x748391, alpha: 0.25), scam: .white,  dateFillStatic: UIColor(rgb: 0x748391, alpha: 0.45), dateFillFloating: UIColor(rgb: 0x939fab, alpha: 0.5)), withCustomWallpaper: PresentationThemeServiceMessageColorComponents(fill: serviceBackgroundColor, primaryText: .white, linkHighlight: UIColor(rgb: 0x748391, alpha: 0.25), scam: .white, dateFillStatic: serviceBackgroundColor, dateFillFloating: serviceBackgroundColor.withAlphaComponent(serviceBackgroundColor.alpha * 0.6667))),
         unreadBarFillColor: UIColor(white: 1.0, alpha: 0.9),
         unreadBarStrokeColor: UIColor(white: 0.0, alpha: 0.2),
         unreadBarTextColor: UIColor(rgb: 0x86868d),
@@ -307,7 +316,7 @@ private func makeDefaultPresentationTheme(accentColor: UIColor, serviceBackgroun
     )
     
     let serviceMessageDay = PresentationThemeServiceMessage(
-        components: PresentationThemeServiceMessageColor(withDefaultWallpaper: PresentationThemeServiceMessageColorComponents(fill: UIColor(rgb: 0xffffff, alpha: 0.8), primaryText: UIColor(rgb: 0x8d8e93), linkHighlight: UIColor(rgb: 0x748391, alpha: 0.25), dateFillStatic: UIColor(rgb: 0xffffff, alpha: 0.8), dateFillFloating: UIColor(rgb: 0xffffff, alpha: 0.8)), withCustomWallpaper: PresentationThemeServiceMessageColorComponents(fill: serviceBackgroundColor, primaryText: .white, linkHighlight: UIColor(rgb: 0x748391, alpha: 0.25), dateFillStatic: serviceBackgroundColor, dateFillFloating: serviceBackgroundColor.withAlphaComponent(serviceBackgroundColor.alpha * 0.6667))),
+        components: PresentationThemeServiceMessageColor(withDefaultWallpaper: PresentationThemeServiceMessageColorComponents(fill: UIColor(rgb: 0xffffff, alpha: 0.8), primaryText: UIColor(rgb: 0x8d8e93), linkHighlight: UIColor(rgb: 0x748391, alpha: 0.25), scam: destructiveColor, dateFillStatic: UIColor(rgb: 0xffffff, alpha: 0.8), dateFillFloating: UIColor(rgb: 0xffffff, alpha: 0.8)), withCustomWallpaper: PresentationThemeServiceMessageColorComponents(fill: serviceBackgroundColor, primaryText: .white, linkHighlight: UIColor(rgb: 0x748391, alpha: 0.25), scam: destructiveColor, dateFillStatic: serviceBackgroundColor, dateFillFloating: serviceBackgroundColor.withAlphaComponent(serviceBackgroundColor.alpha * 0.6667))),
         unreadBarFillColor: UIColor(rgb: 0xffffff),
         unreadBarStrokeColor: UIColor(rgb: 0xffffff),
         unreadBarTextColor: UIColor(rgb: 0x8D8E93),
@@ -405,11 +414,13 @@ private func makeDefaultPresentationTheme(accentColor: UIColor, serviceBackgroun
         standardActionTextColor: accentColor,
         opaqueItemSeparatorColor: UIColor(white: 0.9, alpha: 1.0),
         destructiveActionTextColor: destructiveColor,
-        disabledActionTextColor: UIColor(rgb: 0x4d4d4d),
+        disabledActionTextColor: UIColor(rgb: 0xb3b3b3),
         primaryTextColor: .black,
         secondaryTextColor: UIColor(rgb: 0x5e5e5e),
         controlAccentColor: accentColor,
         inputBackgroundColor: UIColor(rgb: 0xe9e9e9),
+        inputHollowBackgroundColor: .white,
+        inputBorderColor: UIColor(rgb: 0xe4e4e6),
         inputPlaceholderColor: UIColor(rgb: 0x818086),
         inputTextColor: .black,
         inputClearButtonColor: UIColor(rgb: 0x7b7b81),
@@ -435,6 +446,7 @@ private func makeDefaultPresentationTheme(accentColor: UIColor, serviceBackgroun
         overallDarkAppearance: false,
         allowsCustomWallpapers: true,
         auth: auth,
+        passcode: passcode,
         rootController: rootController,
         list: list,
         chatList: day ? chatListDay : chatList,

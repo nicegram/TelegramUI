@@ -47,8 +47,8 @@ public final class ChatMessageNotificationItem: NotificationItem {
     }
 }
 
-private let compactAvatarFont: UIFont = UIFont(name: ".SFCompactRounded-Semibold", size: 20.0)!
-private let avatarFont: UIFont = UIFont(name: ".SFCompactRounded-Semibold", size: 24.0)!
+private let compactAvatarFont = UIFont(name: ".SFCompactRounded-Semibold", size: 20.0)!
+private let avatarFont = UIFont(name: ".SFCompactRounded-Semibold", size: 24.0)!
 
 final class ChatMessageNotificationItemNode: NotificationItemNode {
     private var item: ChatMessageNotificationItem?
@@ -104,8 +104,20 @@ final class ChatMessageNotificationItemNode: NotificationItemNode {
             
             if let channel = peer as? TelegramChannel, case .broadcast = channel.info {
                 title = peer.displayTitle(strings: item.strings, displayOrder: item.nameDisplayOrder)
-            } else if let author = firstMessage.author, author.id != peer.id {
-                title = author.displayTitle(strings: item.strings, displayOrder: item.nameDisplayOrder) + "@" + peer.displayTitle(strings: item.strings, displayOrder: item.nameDisplayOrder)
+            } else if let author = firstMessage.author {
+                if author.id != peer.id {
+                    title = author.displayTitle(strings: item.strings, displayOrder: item.nameDisplayOrder) + "@" + peer.displayTitle(strings: item.strings, displayOrder: item.nameDisplayOrder)
+                } else {
+                    title = peer.displayTitle(strings: item.strings, displayOrder: item.nameDisplayOrder)
+                    for attribute in firstMessage.attributes {
+                        if let attribute = attribute as? SourceReferenceMessageAttribute {
+                            if let sourcePeer = firstMessage.peers[attribute.messageId.peerId] {
+                                title = sourcePeer.displayTitle(strings: item.strings, displayOrder: item.nameDisplayOrder) + "@" + peer.displayTitle(strings: item.strings, displayOrder: item.nameDisplayOrder)
+                            }
+                            break
+                        }
+                    }
+                }
             } else {
                 title = peer.displayTitle(strings: item.strings, displayOrder: item.nameDisplayOrder)
             }
@@ -115,7 +127,7 @@ final class ChatMessageNotificationItemNode: NotificationItemNode {
         var updatedMedia: Media?
         var imageDimensions: CGSize?
         var isRound = false
-        let messageText: String
+        var messageText: String
         if item.messages.first?.id.peerId.namespace == Namespaces.Peer.SecretChat {
             titleIcon = PresentationResourcesRootController.inAppNotificationSecretChatIcon(presentationData.theme)
             messageText = item.strings.PUSH_ENCRYPTED_MESSAGE("").0
@@ -154,7 +166,7 @@ final class ChatMessageNotificationItemNode: NotificationItemNode {
                 displayAuthor = false
             }
             
-            if item.messages[0].forwardInfo != nil {
+            if item.messages[0].forwardInfo != nil && item.messages[0].sourceReference == nil {
                 if let author = item.messages[0].author, displayAuthor {
                     let rawText = presentationData.strings.PUSH_CHAT_MESSAGE_FWDS(Int32(item.messages.count), peer.displayTitle(strings: item.strings, displayOrder: item.nameDisplayOrder), author.compactDisplayTitle, Int32(item.messages.count))
                     if let index = rawText.firstIndex(of: "|") {
@@ -215,10 +227,13 @@ final class ChatMessageNotificationItemNode: NotificationItemNode {
                                 messageText = rawText
                             }
                     }
-                } else if isGroup, let author = item.messages[0].author {
+                } else if isGroup, var author = item.messages[0].author {
+                    if let sourceReference = item.messages[0].sourceReference, let sourcePeer = item.messages[0].peers[sourceReference.messageId.peerId] {
+                        author = sourcePeer
+                    }
                     switch kind {
                         case .image:
-                            let rawText = presentationData.strings.PUSH_CHAT_MESSAGE_PHOTOS(Int32(item.messages.count), peer.displayTitle(strings: item.strings, displayOrder: item.nameDisplayOrder), author.compactDisplayTitle, Int32(item.messages.count))
+                            let rawText = presentationData.strings.PUSH_CHAT_MESSAGE_PHOTOS(Int32(item.messages.count), author.compactDisplayTitle, peer.displayTitle(strings: item.strings, displayOrder: item.nameDisplayOrder), Int32(item.messages.count))
                             if let index = rawText.firstIndex(of: "|") {
                                 title = String(rawText[rawText.startIndex ..< index])
                                 messageText = String(rawText[rawText.index(after: index)...])
@@ -227,7 +242,7 @@ final class ChatMessageNotificationItemNode: NotificationItemNode {
                                 messageText = rawText
                             }
                         default:
-                            let rawText = presentationData.strings.PUSH_CHAT_MESSAGES(Int32(item.messages.count), peer.displayTitle(strings: item.strings, displayOrder: item.nameDisplayOrder), author.compactDisplayTitle, Int32(item.messages.count))
+                            let rawText = presentationData.strings.PUSH_CHAT_MESSAGES(Int32(item.messages.count), author.compactDisplayTitle, peer.displayTitle(strings: item.strings, displayOrder: item.nameDisplayOrder), Int32(item.messages.count))
                             if let index = rawText.firstIndex(of: "|") {
                                 title = String(rawText[rawText.startIndex ..< index])
                                 messageText = String(rawText[rawText.index(after: index)...])
@@ -264,6 +279,8 @@ final class ChatMessageNotificationItemNode: NotificationItemNode {
         } else {
             messageText = ""
         }
+        
+        messageText = messageText.replacingOccurrences(of: "\n\n", with: " ")
         
         self.titleAttributedText = NSAttributedString(string: title ?? "", font: compact ? Font.semibold(15.0) : Font.semibold(16.0), textColor: presentationData.theme.inAppNotification.primaryTextColor)
         

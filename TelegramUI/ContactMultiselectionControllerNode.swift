@@ -49,14 +49,20 @@ final class ContactMultiselectionControllerNode: ASDisplayNode {
         self.presentationData = context.sharedContext.currentPresentationData.with { $0 }
         
         let placeholder: String
+        var includeChatList = false
         switch mode {
-            case .peerSelection:
-                placeholder = self.presentationData.strings.Contacts_SearchLabel
+            case let .peerSelection(_, searchGroups):
+                includeChatList = searchGroups
+                if searchGroups {
+                    placeholder = self.presentationData.strings.Contacts_SearchUsersAndGroupsLabel
+                } else {
+                    placeholder = self.presentationData.strings.Contacts_SearchLabel
+                }
             default:
                 placeholder = self.presentationData.strings.Compose_TokenListPlaceholder
         }
         
-        self.contactListNode = ContactListNode(context: context, presentation: .single(.natural(options: options)), filters: filters, selectionState: ContactListNodeGroupSelectionState())
+        self.contactListNode = ContactListNode(context: context, presentation: .single(.natural(options: options, includeChatList: includeChatList)), filters: filters, selectionState: ContactListNodeGroupSelectionState())
         self.tokenListNode = EditableTokenListNode(theme: EditableTokenListNodeTheme(backgroundColor: self.presentationData.theme.rootController.navigationBar.backgroundColor, separatorColor: self.presentationData.theme.rootController.navigationBar.separatorColor, placeholderTextColor: self.presentationData.theme.list.itemPlaceholderTextColor, primaryTextColor: self.presentationData.theme.list.itemPrimaryTextColor, selectedTextColor: self.presentationData.theme.list.itemAccentColor, keyboardColor: self.presentationData.theme.chatList.searchBarKeyboardColor), placeholder: placeholder)
         
         super.init()
@@ -96,10 +102,12 @@ final class ContactMultiselectionControllerNode: ASDisplayNode {
                             return state
                         }
                         var searchChatList = false
-                        if case let .peerSelection(value) = mode {
-                            searchChatList = value
+                        var searchGroups = false
+                        if case let .peerSelection(peerSelection) = mode {
+                            searchChatList = peerSelection.searchChatList
+                            searchGroups = peerSelection.searchGroups
                         }
-                        let searchResultsNode = ContactListNode(context: context, presentation: .single(.search(signal: searchText.get(), searchChatList: searchChatList, searchDeviceContacts: false)), filters: filters, selectionState: selectionState)
+                        let searchResultsNode = ContactListNode(context: context, presentation: .single(.search(signal: searchText.get(), searchChatList: searchChatList, searchDeviceContacts: false, searchGroups: searchGroups)), filters: filters, selectionState: selectionState)
                         searchResultsNode.openPeer = { peer in
                             self?.tokenListNode.setText("")
                             self?.openPeer?(peer)

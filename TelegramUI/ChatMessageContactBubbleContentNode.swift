@@ -5,7 +5,7 @@ import SwiftSignalKit
 import Postbox
 import TelegramCore
 
-private let avatarFont: UIFont = UIFont(name: ".SFCompactRounded-Semibold", size: 16.0)!
+private let avatarFont = UIFont(name: ".SFCompactRounded-Semibold", size: 16.0)!
 
 private let titleFont = Font.medium(14.0)
 private let textFont = Font.regular(14.0)
@@ -151,7 +151,7 @@ class ChatMessageContactBubbleContentNode: ChatMessageBubbleContentNode {
                     sentViaBot = true
                 }
                 
-                let dateText = stringForMessageTimestampStatus(message: item.message, dateTimeFormat: item.presentationData.dateTimeFormat, nameDisplayOrder: item.presentationData.nameDisplayOrder, strings: item.presentationData.strings)
+                let dateText = stringForMessageTimestampStatus(accountPeerId: item.context.account.peerId, message: item.message, dateTimeFormat: item.presentationData.dateTimeFormat, nameDisplayOrder: item.presentationData.nameDisplayOrder, strings: item.presentationData.strings)
                 
                 let statusType: ChatMessageDateAndStatusType?
                 switch position {

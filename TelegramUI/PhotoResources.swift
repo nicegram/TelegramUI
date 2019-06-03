@@ -6,6 +6,7 @@ import AVFoundation
 import ImageIO
 import TelegramUIPrivateModule
 import TelegramCore
+import WebP
 
 private enum ResourceFileData {
     case data(Data)
@@ -2091,7 +2092,7 @@ func chatMessageImageFile(account: Account, fileReference: FileMediaReference, t
     |> map { (thumbnailData, fullSizePath, fullSizeComplete) in
         return { arguments in
             assertNotOnMainThread()
-            let context = DrawingContext(size: arguments.drawingSize, clear: arguments.emptyColor == nil)
+            let context = DrawingContext(size: arguments.drawingSize, clear: true)
             
             let drawingRect = arguments.drawingRect
             var fittedSize: CGSize
@@ -2119,13 +2120,22 @@ func chatMessageImageFile(account: Account, fileReference: FileMediaReference, t
             }
             
             var thumbnailImage: CGImage?
-            if let thumbnailData = thumbnailData, let imageSource = CGImageSourceCreateWithData(thumbnailData as CFData, nil), let image = CGImageSourceCreateImageAtIndex(imageSource, 0, nil) {
-                if fullSizeImage == nil {
-                    imageOrientation = imageOrientationFromSource(imageSource)
-                }
-                thumbnailImage = image
-                if thumbnail {
-                    fittedSize = CGSize(width: CGFloat(image.width), height: CGFloat(image.height)).aspectFilled(arguments.boundingSize)
+            var clearContext = false
+            if let thumbnailData = thumbnailData {
+                if let imageSource = CGImageSourceCreateWithData(thumbnailData as CFData, nil), let image = CGImageSourceCreateImageAtIndex(imageSource, 0, nil) {
+                    if fullSizeImage == nil {
+                        imageOrientation = imageOrientationFromSource(imageSource)
+                    }
+                    thumbnailImage = image
+                    if thumbnail {
+                        fittedSize = CGSize(width: CGFloat(image.width), height: CGFloat(image.height)).aspectFilled(arguments.boundingSize)
+                    }
+                } else if let image = WebP.convert(fromWebP: thumbnailData) {
+                    thumbnailImage = image.cgImage
+                    clearContext = true
+                    if thumbnail {
+                        fittedSize = CGSize(width: CGFloat(image.size.width), height: CGFloat(image.size.height)).aspectFilled(arguments.boundingSize)
+                    }
                 }
             }
             
@@ -2141,7 +2151,7 @@ func chatMessageImageFile(account: Account, fileReference: FileMediaReference, t
                     let initialThumbnailContextFittingSize = fittedSize.fitted(CGSize(width: 100.0, height: 100.0))
                     
                     let thumbnailContextSize = thumbnailSize.aspectFitted(initialThumbnailContextFittingSize)
-                    let thumbnailContext = DrawingContext(size: thumbnailContextSize, scale: 1.0)
+                    let thumbnailContext = DrawingContext(size: thumbnailContextSize, scale: 1.0, clear: clearContext)
                     thumbnailContext.withFlippedContext { c in
                         c.interpolationQuality = .none
                         c.draw(thumbnailImage, in: CGRect(origin: CGPoint(), size: thumbnailContextSize))
@@ -2155,7 +2165,7 @@ func chatMessageImageFile(account: Account, fileReference: FileMediaReference, t
                     
                     if thumbnailContextFittingSize.width > thumbnailContextSize.width {
                         let additionalContextSize = thumbnailContextFittingSize
-                        let additionalBlurContext = DrawingContext(size: additionalContextSize, scale: 1.0)
+                        let additionalBlurContext = DrawingContext(size: additionalContextSize, scale: 1.0, clear: clearContext)
                         additionalBlurContext.withFlippedContext { c in
                             c.interpolationQuality = .default
                             if let image = thumbnailContext.generateImage()?.cgImage {

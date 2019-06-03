@@ -21,6 +21,16 @@ public final class PresentationThemeAuth {
     }
 }
 
+public final class PresentationThemePasscode {
+    public let backgroundColors: (UIColor, UIColor)
+    public let buttonColor: UIColor?
+    
+    public init(backgroundColors: (UIColor, UIColor), buttonColor: UIColor?) {
+        self.backgroundColors = backgroundColors
+        self.buttonColor = buttonColor
+    }
+}
+
 public final class PresentationThemeRootTabBar {
     public let backgroundColor: UIColor
     public let separatorColor: UIColor
@@ -189,12 +199,14 @@ public final class PresentationThemeActionSheet {
     public let secondaryTextColor: UIColor
     public let controlAccentColor: UIColor
     public let inputBackgroundColor: UIColor
+    public let inputHollowBackgroundColor: UIColor
+    public let inputBorderColor: UIColor
     public let inputPlaceholderColor: UIColor
     public let inputTextColor: UIColor
     public let inputClearButtonColor: UIColor
     public let checkContentColor: UIColor
     
-    init(dimColor: UIColor, backgroundType: PresentationThemeActionSheetBackgroundType, opaqueItemBackgroundColor: UIColor, itemBackgroundColor: UIColor, opaqueItemHighlightedBackgroundColor: UIColor, itemHighlightedBackgroundColor: UIColor, standardActionTextColor: UIColor, opaqueItemSeparatorColor: UIColor, destructiveActionTextColor: UIColor, disabledActionTextColor: UIColor, primaryTextColor: UIColor, secondaryTextColor: UIColor, controlAccentColor: UIColor, inputBackgroundColor: UIColor, inputPlaceholderColor: UIColor, inputTextColor: UIColor, inputClearButtonColor: UIColor, checkContentColor: UIColor) {
+    init(dimColor: UIColor, backgroundType: PresentationThemeActionSheetBackgroundType, opaqueItemBackgroundColor: UIColor, itemBackgroundColor: UIColor, opaqueItemHighlightedBackgroundColor: UIColor, itemHighlightedBackgroundColor: UIColor, standardActionTextColor: UIColor, opaqueItemSeparatorColor: UIColor, destructiveActionTextColor: UIColor, disabledActionTextColor: UIColor, primaryTextColor: UIColor, secondaryTextColor: UIColor, controlAccentColor: UIColor, inputBackgroundColor: UIColor, inputHollowBackgroundColor: UIColor, inputBorderColor: UIColor, inputPlaceholderColor: UIColor, inputTextColor: UIColor, inputClearButtonColor: UIColor, checkContentColor: UIColor) {
         self.dimColor = dimColor
         self.backgroundType = backgroundType
         self.opaqueItemBackgroundColor = opaqueItemBackgroundColor
@@ -209,6 +221,8 @@ public final class PresentationThemeActionSheet {
         self.secondaryTextColor = secondaryTextColor
         self.controlAccentColor = controlAccentColor
         self.inputBackgroundColor = inputBackgroundColor
+        self.inputHollowBackgroundColor = inputHollowBackgroundColor
+        self.inputBorderColor = inputBorderColor
         self.inputPlaceholderColor = inputPlaceholderColor
         self.inputTextColor = inputTextColor
         self.inputClearButtonColor = inputClearButtonColor
@@ -514,10 +528,12 @@ public final class PresentationThemeChatBubble {
     public let incomingSecondaryTextColor: UIColor
     public let incomingLinkTextColor: UIColor
     public let incomingLinkHighlightColor: UIColor
+    public let incomingScamColor: UIColor
     public let outgoingPrimaryTextColor: UIColor
     public let outgoingSecondaryTextColor: UIColor
     public let outgoingLinkTextColor: UIColor
     public let outgoingLinkHighlightColor: UIColor
+    public let outgoingScamColor: UIColor
     public let infoPrimaryTextColor: UIColor
     public let infoLinkTextColor: UIColor
     public let incomingTextHighlightColor: UIColor
@@ -577,7 +593,7 @@ public final class PresentationThemeChatBubble {
     public let incomingPolls: PresentationThemeChatBubblePolls
     public let outgoingPolls: PresentationThemeChatBubblePolls
     
-    public init(incoming: PresentationThemeBubbleColor, outgoing: PresentationThemeBubbleColor, freeform: PresentationThemeBubbleColor, incomingPrimaryTextColor: UIColor, incomingSecondaryTextColor: UIColor, incomingLinkTextColor: UIColor, incomingLinkHighlightColor: UIColor, outgoingPrimaryTextColor: UIColor, outgoingSecondaryTextColor: UIColor, outgoingLinkTextColor: UIColor, outgoingLinkHighlightColor: UIColor, infoPrimaryTextColor: UIColor, infoLinkTextColor: UIColor, incomingTextHighlightColor: UIColor, outgoingTextHighlightColor: UIColor, incomingAccentTextColor: UIColor, outgoingAccentTextColor: UIColor, incomingAccentControlColor: UIColor, outgoingAccentControlColor: UIColor, incomingMediaActiveControlColor: UIColor, outgoingMediaActiveControlColor: UIColor, incomingMediaInactiveControlColor: UIColor, outgoingMediaInactiveControlColor: UIColor, outgoingCheckColor: UIColor, incomingPendingActivityColor: UIColor, outgoingPendingActivityColor: UIColor, mediaDateAndStatusFillColor: UIColor, mediaDateAndStatusTextColor: UIColor, incomingFileTitleColor: UIColor, outgoingFileTitleColor: UIColor, incomingFileDescriptionColor: UIColor, outgoingFileDescriptionColor: UIColor, incomingFileDurationColor: UIColor, outgoingFileDurationColor: UIColor, shareButtonFillColor: PresentationThemeVariableColor, shareButtonStrokeColor: PresentationThemeVariableColor, shareButtonForegroundColor: PresentationThemeVariableColor, mediaOverlayControlBackgroundColor: UIColor, mediaOverlayControlForegroundColor: UIColor, actionButtonsIncomingFillColor: PresentationThemeVariableColor, actionButtonsIncomingStrokeColor: PresentationThemeVariableColor, actionButtonsIncomingTextColor: PresentationThemeVariableColor, actionButtonsOutgoingFillColor: PresentationThemeVariableColor, actionButtonsOutgoingStrokeColor: PresentationThemeVariableColor, actionButtonsOutgoingTextColor: PresentationThemeVariableColor, selectionControlBorderColor: UIColor, selectionControlFillColor: UIColor, selectionControlForegroundColor: UIColor, mediaHighlightOverlayColor: UIColor, deliveryFailedFillColor: UIColor, deliveryFailedForegroundColor: UIColor, incomingMediaPlaceholderColor: UIColor, outgoingMediaPlaceholderColor: UIColor, incomingPolls: PresentationThemeChatBubblePolls, outgoingPolls: PresentationThemeChatBubblePolls) {
+    public init(incoming: PresentationThemeBubbleColor, outgoing: PresentationThemeBubbleColor, freeform: PresentationThemeBubbleColor, incomingPrimaryTextColor: UIColor, incomingSecondaryTextColor: UIColor, incomingLinkTextColor: UIColor, incomingLinkHighlightColor: UIColor, incomingScamColor: UIColor, outgoingPrimaryTextColor: UIColor, outgoingSecondaryTextColor: UIColor, outgoingLinkTextColor: UIColor, outgoingLinkHighlightColor: UIColor, outgoingScamColor: UIColor, infoPrimaryTextColor: UIColor, infoLinkTextColor: UIColor, incomingTextHighlightColor: UIColor, outgoingTextHighlightColor: UIColor, incomingAccentTextColor: UIColor, outgoingAccentTextColor: UIColor, incomingAccentControlColor: UIColor, outgoingAccentControlColor: UIColor, incomingMediaActiveControlColor: UIColor, outgoingMediaActiveControlColor: UIColor, incomingMediaInactiveControlColor: UIColor, outgoingMediaInactiveControlColor: UIColor, outgoingCheckColor: UIColor, incomingPendingActivityColor: UIColor, outgoingPendingActivityColor: UIColor, mediaDateAndStatusFillColor: UIColor, mediaDateAndStatusTextColor: UIColor, incomingFileTitleColor: UIColor, outgoingFileTitleColor: UIColor, incomingFileDescriptionColor: UIColor, outgoingFileDescriptionColor: UIColor, incomingFileDurationColor: UIColor, outgoingFileDurationColor: UIColor, shareButtonFillColor: PresentationThemeVariableColor, shareButtonStrokeColor: PresentationThemeVariableColor, shareButtonForegroundColor: PresentationThemeVariableColor, mediaOverlayControlBackgroundColor: UIColor, mediaOverlayControlForegroundColor: UIColor, actionButtonsIncomingFillColor: PresentationThemeVariableColor, actionButtonsIncomingStrokeColor: PresentationThemeVariableColor, actionButtonsIncomingTextColor: PresentationThemeVariableColor, actionButtonsOutgoingFillColor: PresentationThemeVariableColor, actionButtonsOutgoingStrokeColor: PresentationThemeVariableColor, actionButtonsOutgoingTextColor: PresentationThemeVariableColor, selectionControlBorderColor: UIColor, selectionControlFillColor: UIColor, selectionControlForegroundColor: UIColor, mediaHighlightOverlayColor: UIColor, deliveryFailedFillColor: UIColor, deliveryFailedForegroundColor: UIColor, incomingMediaPlaceholderColor: UIColor, outgoingMediaPlaceholderColor: UIColor, incomingPolls: PresentationThemeChatBubblePolls, outgoingPolls: PresentationThemeChatBubblePolls) {
         self.incoming = incoming
         self.outgoing = outgoing
         self.freeform = freeform
@@ -586,10 +602,12 @@ public final class PresentationThemeChatBubble {
         self.incomingSecondaryTextColor = incomingSecondaryTextColor
         self.incomingLinkTextColor = incomingLinkTextColor
         self.incomingLinkHighlightColor = incomingLinkHighlightColor
+        self.incomingScamColor = incomingScamColor
         self.outgoingPrimaryTextColor = outgoingPrimaryTextColor
         self.outgoingSecondaryTextColor = outgoingSecondaryTextColor
         self.outgoingLinkTextColor = outgoingLinkTextColor
         self.outgoingLinkHighlightColor = outgoingLinkHighlightColor
+        self.outgoingScamColor = outgoingScamColor
         self.infoPrimaryTextColor = infoPrimaryTextColor
         self.infoLinkTextColor = infoLinkTextColor
         self.incomingTextHighlightColor = incomingTextHighlightColor
@@ -654,14 +672,16 @@ public final class PresentationThemeServiceMessageColorComponents {
     public let fill: UIColor
     public let primaryText: UIColor
     public let linkHighlight: UIColor
+    public let scam: UIColor
     
     public let dateFillStatic: UIColor
     public let dateFillFloating: UIColor
     
-    public init(fill: UIColor, primaryText: UIColor, linkHighlight: UIColor, dateFillStatic: UIColor, dateFillFloating: UIColor) {
+    public init(fill: UIColor, primaryText: UIColor, linkHighlight: UIColor, scam: UIColor, dateFillStatic: UIColor, dateFillFloating: UIColor) {
         self.fill = fill
         self.primaryText = primaryText
         self.linkHighlight = linkHighlight
+        self.scam = scam
         self.dateFillStatic = dateFillStatic
         self.dateFillFloating = dateFillFloating
     }
@@ -913,6 +933,7 @@ public final class PresentationTheme: Equatable {
     public let overallDarkAppearance: Bool
     public let allowsCustomWallpapers: Bool
     public let auth: PresentationThemeAuth
+    public let passcode: PresentationThemePasscode
     public let rootController: PresentationThemeRootController
     public let list: PresentationThemeList
     public let chatList: PresentationThemeChatList
@@ -922,11 +943,12 @@ public final class PresentationTheme: Equatable {
     
     public let resourceCache: PresentationsResourceCache = PresentationsResourceCache()
     
-    public init(name: PresentationThemeName, overallDarkAppearance: Bool, allowsCustomWallpapers: Bool, auth: PresentationThemeAuth, rootController: PresentationThemeRootController, list: PresentationThemeList, chatList: PresentationThemeChatList, chat: PresentationThemeChat, actionSheet: PresentationThemeActionSheet, inAppNotification: PresentationThemeInAppNotification) {
+    public init(name: PresentationThemeName, overallDarkAppearance: Bool, allowsCustomWallpapers: Bool, auth: PresentationThemeAuth, passcode: PresentationThemePasscode, rootController: PresentationThemeRootController, list: PresentationThemeList, chatList: PresentationThemeChatList, chat: PresentationThemeChat, actionSheet: PresentationThemeActionSheet, inAppNotification: PresentationThemeInAppNotification) {
         self.name = name
         self.overallDarkAppearance = overallDarkAppearance
         self.allowsCustomWallpapers = allowsCustomWallpapers
         self.auth = auth
+        self.passcode = passcode
         self.rootController = rootController
         self.list = list
         self.chatList = chatList

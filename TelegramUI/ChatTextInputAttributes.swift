@@ -10,7 +10,7 @@ struct ChatTextInputAttributes {
     static let italic = NSAttributedStringKey(rawValue: "Attribute__Italic")
     static let monospace = NSAttributedStringKey(rawValue: "Attribute__Monospace")
     static let textMention = NSAttributedStringKey(rawValue: "Attribute__TextMention")
-    static let url = NSAttributedStringKey(rawValue: "Attribute__Url")
+    static let textUrl = NSAttributedStringKey(rawValue: "Attribute__TextUrl")
 }
 
 func stateAttributedStringForText(_ text: NSAttributedString) -> NSAttributedString {
@@ -19,11 +19,9 @@ func stateAttributedStringForText(_ text: NSAttributedString) -> NSAttributedStr
     
     text.enumerateAttributes(in: fullRange, options: [], using: { attributes, range, _ in
         for (key, value) in attributes {
-            if key == ChatTextInputAttributes.textMention {
+            if key == ChatTextInputAttributes.textMention || key == ChatTextInputAttributes.textUrl {
                 result.addAttribute(key, value: value, range: range)
             } else if key == ChatTextInputAttributes.bold || key == ChatTextInputAttributes.italic || key == ChatTextInputAttributes.monospace {
-                result.addAttribute(key, value: value, range: range)
-            } else if key == ChatTextInputAttributes.url {
                 result.addAttribute(key, value: value, range: range)
             }
         }
@@ -37,6 +35,7 @@ private struct FontAttributes: OptionSet {
     static let bold = FontAttributes(rawValue: 1 << 0)
     static let italic = FontAttributes(rawValue: 1 << 1)
     static let monospace = FontAttributes(rawValue: 1 << 2)
+    static let strikethrough = FontAttributes(rawValue: 1 << 3)
 }
 
 func textAttributedStringForStateText(_ stateText: NSAttributedString, fontSize: CGFloat, textColor: UIColor, accentTextColor: UIColor) -> NSAttributedString {
@@ -50,9 +49,12 @@ func textAttributedStringForStateText(_ stateText: NSAttributedString, fontSize:
         var fontAttributes: FontAttributes = []
         
         for (key, value) in attributes {
-            if key == ChatTextInputAttributes.textMention {
+            if key == ChatTextInputAttributes.textMention || key == ChatTextInputAttributes.textUrl {
                 result.addAttribute(key, value: value, range: range)
                 result.addAttribute(NSAttributedStringKey.foregroundColor, value: accentTextColor, range: range)
+                if accentTextColor.isEqual(textColor) {
+                    result.addAttribute(NSAttributedStringKey.underlineStyle, value: NSUnderlineStyle.styleSingle.rawValue as NSNumber, range: range)
+                }
             } else if key == ChatTextInputAttributes.bold {
                 result.addAttribute(key, value: value, range: range)
                 fontAttributes.insert(.bold)
@@ -62,10 +64,6 @@ func textAttributedStringForStateText(_ stateText: NSAttributedString, fontSize:
             } else if key == ChatTextInputAttributes.monospace {
                 result.addAttribute(key, value: value, range: range)
                 fontAttributes.insert(.monospace)
-            } else if key == ChatTextInputAttributes.url {
-                result.addAttribute(key, value: value, range: range)
-                result.addAttribute(NSAttributedStringKey.foregroundColor, value: accentTextColor, range: range)
-                result.addAttribute(NSAttributedStringKey.underlineStyle, value: NSUnderlineStyle.styleSingle.rawValue, range: range)
             }
         }
         
@@ -91,18 +89,6 @@ func textAttributedStringForStateText(_ stateText: NSAttributedString, fontSize:
     return result
 }
 
-private func textMentionRangesEqual(_ lhs: [(NSRange, ChatTextInputTextMentionAttribute)], _ rhs: [(NSRange, ChatTextInputTextMentionAttribute)]) -> Bool {
-    if lhs.count != rhs.count {
-        return false
-    }
-    for i in 0 ..< lhs.count {
-        if lhs[i].0 != rhs[i].0 || lhs[i].1.peerId != rhs[i].1.peerId {
-            return false
-        }
-    }
-    return true
-}
-
 final class ChatTextInputTextMentionAttribute: NSObject {
     let peerId: PeerId
     
@@ -121,8 +107,37 @@ final class ChatTextInputTextMentionAttribute: NSObject {
     }
 }
 
+private func textMentionRangesEqual(_ lhs: [(NSRange, ChatTextInputTextMentionAttribute)], _ rhs: [(NSRange, ChatTextInputTextMentionAttribute)]) -> Bool {
+    if lhs.count != rhs.count {
+        return false
+    }
+    for i in 0 ..< lhs.count {
+        if lhs[i].0 != rhs[i].0 || lhs[i].1.peerId != rhs[i].1.peerId {
+            return false
+        }
+    }
+    return true
+}
 
-private func urlRangesEqual(_ lhs: [(NSRange, ChatTextInputUrlAttribute)], _ rhs: [(NSRange, ChatTextInputUrlAttribute)]) -> Bool {
+final class ChatTextInputTextUrlAttribute: NSObject {
+    let url: String
+    
+    init(url: String) {
+        self.url = url
+        
+        super.init()
+    }
+    
+    override func isEqual(_ object: Any?) -> Bool {
+        if let other = object as? ChatTextInputTextUrlAttribute {
+            return self.url == other.url
+        } else {
+            return false
+        }
+    }
+}
+
+private func textUrlRangesEqual(_ lhs: [(NSRange, ChatTextInputTextUrlAttribute)], _ rhs: [(NSRange, ChatTextInputTextUrlAttribute)]) -> Bool {
     if lhs.count != rhs.count {
         return false
     }
@@ -134,35 +149,7 @@ private func urlRangesEqual(_ lhs: [(NSRange, ChatTextInputUrlAttribute)], _ rhs
     return true
 }
 
-final class ChatTextInputUrlAttribute: NSObject {
-    let url: String
-    
-    init(url: String) {
-        self.url = url
-        
-        super.init()
-    }
-    
-    override func isEqual(_ object: Any?) -> Bool {
-        if let other = object as? ChatTextInputUrlAttribute {
-            return self.url == other.url
-        } else {
-            return false
-        }
-    }
-}
-
-
-func refreshChatTextInputAttributes(_ textNode: ASEditableTextNode, theme: PresentationTheme, baseFontSize: CGFloat) {
-    guard let initialAttributedText = textNode.attributedText, initialAttributedText.length != 0 else {
-        return
-    }
-    
-    let text: NSString = initialAttributedText.string as NSString
-    let fullRange = NSRange(location: 0, length: initialAttributedText.length)
-    
-    let attributedText = NSMutableAttributedString(attributedString: stateAttributedStringForText(initialAttributedText))
-    
+private func refreshTextMentions(text: NSString, initialAttributedText: NSAttributedString, attributedText: NSMutableAttributedString, fullRange: NSRange) {
     var textMentionRanges: [(NSRange, ChatTextInputTextMentionAttribute)] = []
     initialAttributedText.enumerateAttribute(ChatTextInputAttributes.textMention, in: fullRange, options: [], using: { value, range, _ in
         if let value = value as? ChatTextInputTextMentionAttribute {
@@ -276,13 +263,149 @@ func refreshChatTextInputAttributes(_ textNode: ASEditableTextNode, theme: Prese
             attributedText.addAttribute(ChatTextInputAttributes.textMention, value: ChatTextInputTextMentionAttribute(peerId: attribute.peerId), range: range)
         }
     }
+}
+
+private func refreshTextUrls(text: NSString, initialAttributedText: NSAttributedString, attributedText: NSMutableAttributedString, fullRange: NSRange) {
+    var textUrlRanges: [(NSRange, ChatTextInputTextUrlAttribute)] = []
+    initialAttributedText.enumerateAttribute(ChatTextInputAttributes.textUrl, in: fullRange, options: [], using: { value, range, _ in
+        if let value = value as? ChatTextInputTextUrlAttribute {
+            textUrlRanges.append((range, value))
+        }
+    })
+    textUrlRanges.sort(by: { $0.0.location < $1.0.location })
+    let initialTextUrlRanges = textUrlRanges
     
-    let resultAttributedText = textAttributedStringForStateText(attributedText, fontSize: baseFontSize, textColor: theme.chat.inputPanel.primaryTextColor, accentTextColor: theme.chat.inputPanel.panelControlAccentColor)
+    for i in 0 ..< textUrlRanges.count {
+        let range = textUrlRanges[i].0
+        
+        var validLower = range.lowerBound
+        inner1: for i in range.lowerBound ..< range.upperBound {
+            if let c = UnicodeScalar(text.character(at: i)) {
+                if alphanumericCharacters.contains(c) || c == " " as UnicodeScalar {
+                    validLower = i
+                    break inner1
+                }
+            } else {
+                break inner1
+            }
+        }
+        var validUpper = range.upperBound
+        inner2: for i in (validLower ..< range.upperBound).reversed() {
+            if let c = UnicodeScalar(text.character(at: i)) {
+                if alphanumericCharacters.contains(c) || c == " " as UnicodeScalar {
+                    validUpper = i + 1
+                    break inner2
+                }
+            } else {
+                break inner2
+            }
+        }
+        
+        let minLower = (i == 0) ? fullRange.lowerBound : textUrlRanges[i - 1].0.upperBound
+        inner3: for i in (minLower ..< validLower).reversed() {
+            if let c = UnicodeScalar(text.character(at: i)) {
+                if alphanumericCharacters.contains(c) {
+                    validLower = i
+                } else {
+                    break inner3
+                }
+            } else {
+                break inner3
+            }
+        }
+        
+        let maxUpper = (i == textUrlRanges.count - 1) ? fullRange.upperBound : textUrlRanges[i + 1].0.lowerBound
+        inner3: for i in validUpper ..< maxUpper {
+            if let c = UnicodeScalar(text.character(at: i)) {
+                if alphanumericCharacters.contains(c) {
+                    validUpper = i + 1
+                } else {
+                    break inner3
+                }
+            } else {
+                break inner3
+            }
+        }
+        
+        textUrlRanges[i] = (NSRange(location: validLower, length: validUpper - validLower), textUrlRanges[i].1)
+    }
+    
+    textUrlRanges = textUrlRanges.filter({ $0.0.length > 0 })
+    
+    while textUrlRanges.count > 1 {
+        var hadReductions = false
+        outer: for i in 0 ..< textUrlRanges.count - 1 {
+            if textUrlRanges[i].1 === textUrlRanges[i + 1].1 {
+                var combine = true
+                inner: for j in textUrlRanges[i].0.upperBound ..< textUrlRanges[i + 1].0.lowerBound {
+                    if let c = UnicodeScalar(text.character(at: j)) {
+                        if alphanumericCharacters.contains(c) || c == " " as UnicodeScalar {
+                        } else {
+                            combine = false
+                            break inner
+                        }
+                    } else {
+                        combine = false
+                        break inner
+                    }
+                }
+                if combine {
+                    hadReductions = true
+                    textUrlRanges[i] = (NSRange(location: textUrlRanges[i].0.lowerBound, length: textUrlRanges[i + 1].0.upperBound - textUrlRanges[i].0.lowerBound), textUrlRanges[i].1)
+                    textUrlRanges.remove(at: i + 1)
+                    break outer
+                }
+            }
+        }
+        if !hadReductions {
+            break
+        }
+    }
+    
+    if textUrlRanges.count > 1 {
+        outer: for i in (1 ..< textUrlRanges.count).reversed() {
+            for j in 0 ..< i {
+                if textUrlRanges[j].1 === textUrlRanges[i].1 {
+                    textUrlRanges.remove(at: i)
+                    continue outer
+                }
+            }
+        }
+    }
+    
+    if !textUrlRangesEqual(textUrlRanges, initialTextUrlRanges) {
+        attributedText.removeAttribute(ChatTextInputAttributes.textUrl, range: fullRange)
+        for (range, attribute) in textUrlRanges {
+            attributedText.addAttribute(ChatTextInputAttributes.textUrl, value: ChatTextInputTextUrlAttribute(url: attribute.url), range: range)
+        }
+    }
+}
+
+func refreshChatTextInputAttributes(_ textNode: ASEditableTextNode, theme: PresentationTheme, baseFontSize: CGFloat) {
+    guard var initialAttributedText = textNode.attributedText, initialAttributedText.length != 0 else {
+        return
+    }
+    
+    var text: NSString = initialAttributedText.string as NSString
+    var fullRange = NSRange(location: 0, length: initialAttributedText.length)
+    var attributedText = NSMutableAttributedString(attributedString: stateAttributedStringForText(initialAttributedText))
+    refreshTextMentions(text: text, initialAttributedText: initialAttributedText, attributedText: attributedText, fullRange: fullRange)
+    
+    var resultAttributedText = textAttributedStringForStateText(attributedText, fontSize: baseFontSize, textColor: theme.chat.inputPanel.primaryTextColor, accentTextColor: theme.chat.inputPanel.panelControlAccentColor)
+    
+    text = resultAttributedText.string as NSString
+    fullRange = NSRange(location: 0, length: initialAttributedText.length)
+    attributedText = NSMutableAttributedString(attributedString: stateAttributedStringForText(resultAttributedText))
+    refreshTextUrls(text: text, initialAttributedText: resultAttributedText, attributedText: attributedText, fullRange: fullRange)
+    
+    resultAttributedText = textAttributedStringForStateText(attributedText, fontSize: baseFontSize, textColor: theme.chat.inputPanel.primaryTextColor, accentTextColor: theme.chat.inputPanel.panelControlAccentColor)
     
     if !resultAttributedText.isEqual(to: initialAttributedText) {
         textNode.textView.textStorage.removeAttribute(NSAttributedStringKey.font, range: fullRange)
         textNode.textView.textStorage.removeAttribute(NSAttributedStringKey.foregroundColor, range: fullRange)
+        textNode.textView.textStorage.removeAttribute(NSAttributedStringKey.underlineStyle, range: fullRange)
         textNode.textView.textStorage.removeAttribute(ChatTextInputAttributes.textMention, range: fullRange)
+        textNode.textView.textStorage.removeAttribute(ChatTextInputAttributes.textUrl, range: fullRange)
         
         textNode.textView.textStorage.addAttribute(NSAttributedStringKey.font, value: Font.regular(baseFontSize), range: fullRange)
         textNode.textView.textStorage.addAttribute(NSAttributedStringKey.foregroundColor, value: theme.chat.inputPanel.primaryTextColor, range: fullRange)
@@ -291,9 +414,13 @@ func refreshChatTextInputAttributes(_ textNode: ASEditableTextNode, theme: Prese
             var fontAttributes: FontAttributes = []
             
             for (key, value) in attributes {
-                if key == ChatTextInputAttributes.textMention {
+                if key == ChatTextInputAttributes.textMention || key == ChatTextInputAttributes.textUrl {
                     textNode.textView.textStorage.addAttribute(key, value: value, range: range)
                     textNode.textView.textStorage.addAttribute(NSAttributedStringKey.foregroundColor, value: theme.chat.inputPanel.panelControlAccentColor, range: range)
+                    
+                    if theme.chat.inputPanel.panelControlAccentColor.isEqual(theme.chat.inputPanel.primaryTextColor) {
+                        textNode.textView.textStorage.addAttribute(NSAttributedStringKey.underlineStyle, value: NSUnderlineStyle.styleSingle.rawValue as NSNumber, range: range)
+                    }
                 } else if key == ChatTextInputAttributes.bold {
                     textNode.textView.textStorage.addAttribute(key, value: value, range: range)
                     fontAttributes.insert(.bold)
@@ -303,23 +430,19 @@ func refreshChatTextInputAttributes(_ textNode: ASEditableTextNode, theme: Prese
                 } else if key == ChatTextInputAttributes.monospace {
                     textNode.textView.textStorage.addAttribute(key, value: value, range: range)
                     fontAttributes.insert(.monospace)
-                } else if key == ChatTextInputAttributes.url {
-                    textNode.textView.textStorage.addAttribute(key, value: value, range: range)
-                    textNode.textView.textStorage.addAttribute(NSAttributedStringKey.foregroundColor, value: theme.chat.inputPanel.panelControlAccentColor, range: range)
-                    textNode.textView.textStorage.addAttribute(NSAttributedStringKey.underlineStyle, value: NSUnderlineStyle.styleSingle.rawValue, range: range)
                 }
             }
                 
             if !fontAttributes.isEmpty {
                 var font: UIFont?
                 if fontAttributes == [.bold, .italic, .monospace] {
-                    
+                    font = Font.semiboldItalicMonospace(baseFontSize)
                 } else if fontAttributes == [.bold, .italic] {
                     font = Font.semiboldItalic(baseFontSize)
                 } else if fontAttributes == [.bold, .monospace] {
-                    
+                    font = Font.semiboldMonospace(baseFontSize)
                 } else if fontAttributes == [.italic, .monospace] {
-                    
+                    font = Font.italicMonospace(baseFontSize)
                 } else if fontAttributes == [.bold] {
                     font = Font.semibold(baseFontSize)
                 } else if fontAttributes == [.italic] {
@@ -361,7 +484,6 @@ func refreshChatTextInputTypingAttributes(_ textNode: ASEditableTextNode, theme:
 func chatTextInputAddFormattingAttribute(_ state: ChatTextInputState, attribute: NSAttributedStringKey, value: Any = true) -> ChatTextInputState {
     if !state.selectionRange.isEmpty {
         let nsRange = NSRange(location: state.selectionRange.lowerBound, length: state.selectionRange.count)
-        
         var addAttribute = true
         var attributesToRemove: [NSAttributedStringKey] = []
         state.inputText.enumerateAttributes(in: nsRange, options: .longestEffectiveRangeNotRequired) { attributes, range, stop in
@@ -380,6 +502,53 @@ func chatTextInputAddFormattingAttribute(_ state: ChatTextInputState, attribute:
         if addAttribute {
             result.addAttribute(attribute, value: value, range: nsRange)
         }
+        return ChatTextInputState(inputText: result, selectionRange: state.selectionRange)
+    } else {
+        return state
+    }
+}
+
+func chatTextInputClearFormattingAttributes(_ state: ChatTextInputState) -> ChatTextInputState {
+    if !state.selectionRange.isEmpty {
+        let nsRange = NSRange(location: state.selectionRange.lowerBound, length: state.selectionRange.count)
+        var attributesToRemove: [NSAttributedStringKey] = []
+        state.inputText.enumerateAttributes(in: nsRange, options: .longestEffectiveRangeNotRequired) { attributes, range, stop in
+            for (key, _) in attributes {
+                attributesToRemove.append(key)
+            }
+        }
+        
+        let result = NSMutableAttributedString(attributedString: state.inputText)
+        for attribute in attributesToRemove {
+            result.removeAttribute(attribute, range: nsRange)
+        }
+        return ChatTextInputState(inputText: result, selectionRange: state.selectionRange)
+    } else {
+        return state
+    }
+}
+
+func chatTextInputAddLinkAttribute(_ state: ChatTextInputState, url: String) -> ChatTextInputState {
+    if !state.selectionRange.isEmpty {
+        let nsRange = NSRange(location: state.selectionRange.lowerBound, length: state.selectionRange.count)
+        var linkRange = nsRange
+        var attributesToRemove: [(NSAttributedStringKey, NSRange)] = []
+        state.inputText.enumerateAttributes(in: nsRange, options: .longestEffectiveRangeNotRequired) { attributes, range, stop in
+            for (key, _) in attributes {
+                if key == ChatTextInputAttributes.textUrl {
+                    attributesToRemove.append((key, range))
+                    linkRange = linkRange.union(range)
+                } else {
+                    attributesToRemove.append((key, nsRange))
+                }
+            }
+        }
+        
+        let result = NSMutableAttributedString(attributedString: state.inputText)
+        for (attribute, range) in attributesToRemove {
+            result.removeAttribute(attribute, range: range)
+        }
+        result.addAttribute(ChatTextInputAttributes.textUrl, value: ChatTextInputTextUrlAttribute(url: url), range: nsRange)
         return ChatTextInputState(inputText: result, selectionRange: state.selectionRange)
     } else {
         return state
@@ -461,4 +630,69 @@ func breakChatInputText(_ text: NSAttributedString) -> [NSAttributedString] {
         }
         return result
     }
+}
+
+private let markdownRegexFormat = "(^|\\s|\\n)(````?)([\\s\\S]+?)(````?)([\\s\\n\\.,:?!;]|$)|(^|\\s)(`|\\*\\*|__)([^\\n]+?)\\7([\\s\\.,:?!;]|$)|@(\\d+)\\s*\\((.+?)\\)"
+private let markdownRegex = try? NSRegularExpression(pattern: markdownRegexFormat, options: [.caseInsensitive, .anchorsMatchLines])
+
+func convertMarkdownToAttributes(_ text: NSAttributedString) -> NSAttributedString {
+    var string = text.string as NSString
+    
+    var offsetRanges:[(NSRange, Int)] = []
+    if let regex = markdownRegex {
+        var stringOffset = 0
+        let result = NSMutableAttributedString()
+        
+        while let match = regex.firstMatch(in: string as String, range: NSMakeRange(0, string.length)) {
+            let matchIndex = stringOffset + match.range.location
+            
+            result.append(text.attributedSubstring(from: NSMakeRange(0, match.range.location)))
+            
+            var pre = match.range(at: 3)
+            if pre.location != NSNotFound {
+                let text = string.substring(with: pre)
+                
+                stringOffset -= match.range(at: 2).length + match.range(at: 4).length
+                
+                let substring = string.substring(with: match.range(at: 1)) + text + string.substring(with: match.range(at: 5))
+                result.append(NSAttributedString(string: substring, attributes: [ChatTextInputAttributes.monospace: true as NSNumber]))
+                offsetRanges.append((NSMakeRange(matchIndex + match.range(at: 1).length, text.count), 6))
+            }
+            
+            pre = match.range(at: 8)
+            if pre.location != NSNotFound {
+                let text = string.substring(with: pre)
+                
+                let entity = string.substring(with: match.range(at: 7))
+                let substring = string.substring(with: match.range(at: 6)) + text + string.substring(with: match.range(at: 9))
+                
+                switch entity {
+                    case "`":
+                        result.append(NSAttributedString(string: substring, attributes: [ChatTextInputAttributes.monospace: true as NSNumber]))
+                        offsetRanges.append((NSMakeRange(matchIndex + match.range(at: 6).length, text.count), match.range(at: 6).length * 2))
+                    case "**":
+                        result.append(NSAttributedString(string: substring, attributes: [ChatTextInputAttributes.bold: true as NSNumber]))
+                        offsetRanges.append((NSMakeRange(matchIndex + match.range(at: 6).length, text.count), match.range(at: 6).length * 2))
+                    case "__":
+                        result.append(NSAttributedString(string: substring, attributes: [ChatTextInputAttributes.italic: true as NSNumber]))
+                        offsetRanges.append((NSMakeRange(matchIndex + match.range(at: 6).length, text.count), match.range(at: 6).length * 2))
+                    default:
+                        break
+                }
+                
+                stringOffset -= match.range(at: 7).length * 2
+            }
+            
+            string = string.substring(from: match.range.location + match.range(at: 0).length) as NSString
+            stringOffset += match.range.location + match.range(at: 0).length
+        }
+        
+        if string.length > 0 {
+            result.append(text.attributedSubstring(from: NSMakeRange(text.length - string.length, string.length)))
+        }
+            
+        return result
+    }
+    
+    return text
 }

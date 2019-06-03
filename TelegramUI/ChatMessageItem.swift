@@ -91,6 +91,19 @@ private func mediaMergeableStyle(_ media: Media) -> ChatMessageMerge {
 private func messagesShouldBeMerged(accountPeerId: PeerId, _ lhs: Message, _ rhs: Message) -> ChatMessageMerge {
     var lhsEffectiveAuthor: Peer? = lhs.author
     var rhsEffectiveAuthor: Peer? = rhs.author
+    for attribute in lhs.attributes {
+        if let attribute = attribute as? SourceReferenceMessageAttribute {
+            lhsEffectiveAuthor = lhs.peers[attribute.messageId.peerId]
+            break
+        }
+    }
+    for attribute in rhs.attributes {
+        if let attribute = attribute as? SourceReferenceMessageAttribute {
+            rhsEffectiveAuthor = rhs.peers[attribute.messageId.peerId]
+            break
+        }
+    }
+    
     if lhs.id.peerId == accountPeerId {
         if let forwardInfo = lhs.forwardInfo {
             lhsEffectiveAuthor = forwardInfo.author
@@ -102,7 +115,12 @@ private func messagesShouldBeMerged(accountPeerId: PeerId, _ lhs: Message, _ rhs
         }
     }
     
-    if abs(lhs.timestamp - rhs.timestamp) < Int32(10 * 60) && lhsEffectiveAuthor?.id == rhsEffectiveAuthor?.id {
+    var sameAuthor = false
+    if lhsEffectiveAuthor?.id == rhsEffectiveAuthor?.id {
+        sameAuthor = true
+    }
+    
+    if abs(lhs.timestamp - rhs.timestamp) < Int32(10 * 60) && sameAuthor {
         var upperStyle: Int32 = ChatMessageMerge.fullyMerged.rawValue
         var lowerStyle: Int32 = ChatMessageMerge.fullyMerged.rawValue
         for media in lhs.media {
@@ -277,6 +295,12 @@ public final class ChatMessageItem: ListViewItem, CustomStringConvertible {
                     displayAuthorInfo = incoming && effectiveAuthor != nil
                 } else {
                     effectiveAuthor = content.firstMessage.author
+                    for attribute in content.firstMessage.attributes {
+                        if let attribute = attribute as? SourceReferenceMessageAttribute {
+                            effectiveAuthor = content.firstMessage.peers[attribute.messageId.peerId]
+                            break
+                        }
+                    }
                     displayAuthorInfo = incoming && peerId.isGroupOrChannel && effectiveAuthor != nil
                 }
             /*case .group:
@@ -327,7 +351,7 @@ public final class ChatMessageItem: ListViewItem, CustomStringConvertible {
         
         loop: for media in self.message.media {
             if let telegramFile = media as? TelegramMediaFile {
-                if GlobalExperimentalSettings.animatedStickers && (telegramFile.fileName == "animation.json" || (telegramFile.fileName?.contains("tg_secret_sticker") ?? false && String(telegramFile.fileName?.suffix(5) ?? "") == ".json")) {
+                if let fileName = telegramFile.fileName, fileName.hasSuffix(".tgs"), let size = telegramFile.size, size > 0 && size < 64 * 1024 {
                     viewClassName = ChatMessageAnimatedStickerItemNode.self
                     break loop
                 }
@@ -352,7 +376,7 @@ public final class ChatMessageItem: ListViewItem, CustomStringConvertible {
             }
         }
         
-        if self.presentationData.largeEmoji && self.message.elligibleForLargeEmoji && viewClassName == ChatMessageBubbleItemNode.self {
+        if viewClassName == ChatMessageBubbleItemNode.self && self.presentationData.largeEmoji && self.message.elligibleForLargeEmoji && messageTextIsElligibleForLargeEmoji(message.text) {
             viewClassName = ChatMessageStickerItemNode.self
         }
         

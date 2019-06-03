@@ -45,9 +45,13 @@ private enum DebugControllerEntry: ItemListNodeEntry {
     case clearTips(PresentationTheme)
     case reimport(PresentationTheme)
     case resetData(PresentationTheme)
+    case resetDatabase(PresentationTheme)
+    case resetHoles(PresentationTheme)
     case resetBiometricsData(PresentationTheme)
+    case optimizeDatabase(PresentationTheme)
     case animatedStickers(PresentationTheme)
     case photoPreview(PresentationTheme, Bool)
+    case alternateIcon(PresentationTheme)
     case versionInfo(PresentationTheme)
     case nicegramDebug(PresentationTheme, Bool)
     
@@ -61,7 +65,7 @@ private enum DebugControllerEntry: ItemListNodeEntry {
                 return DebugControllerSection.logging.rawValue
             case .enableRaiseToSpeak, .keepChatNavigationStack, .skipReadHistory, .crashOnSlowQueries:
                 return DebugControllerSection.experiments.rawValue
-            case .clearTips, .reimport, .resetData, .resetBiometricsData, .animatedStickers, .photoPreview:
+            case .clearTips, .reimport, .resetData, .resetDatabase, .resetHoles, .resetBiometricsData, .optimizeDatabase, .animatedStickers, .photoPreview, .alternateIcon:
                 return DebugControllerSection.experiments.rawValue
             case .versionInfo:
                 return DebugControllerSection.info.rawValue
@@ -102,14 +106,22 @@ private enum DebugControllerEntry: ItemListNodeEntry {
                 return 14
             case .resetData:
                 return 15
-            case .resetBiometricsData:
+            case .resetDatabase:
                 return 16
-            case .animatedStickers:
+            case .resetHoles:
                 return 17
-            case .photoPreview:
+            case .resetBiometricsData:
                 return 18
-            case .versionInfo:
+            case .optimizeDatabase:
                 return 19
+            case .animatedStickers:
+                return 20
+            case .photoPreview:
+                return 21
+            case .alternateIcon:
+                return 22
+            case .versionInfo:
+                return 23
         }
     }
     
@@ -404,11 +416,64 @@ private enum DebugControllerEntry: ItemListNodeEntry {
                     ])])
                     arguments.presentController(actionSheet, nil)
                 })
+            case let .resetDatabase(theme):
+                return ItemListActionItem(theme: theme, title: "Clear Database", kind: .destructive, alignment: .natural, sectionId: self.section, style: .blocks, action: {
+                    guard let context = arguments.context else {
+                        return
+                    }
+                    let presentationData = arguments.sharedContext.currentPresentationData.with { $0 }
+                    let actionSheet = ActionSheetController(presentationTheme: presentationData.theme)
+                    actionSheet.setItemGroups([ActionSheetItemGroup(items: [
+                        ActionSheetTextItem(title: "All secret chats will be lost."),
+                        ActionSheetButtonItem(title: "Clear Database", color: .destructive, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                            let databasePath = context.account.basePath + "/postbox/db"
+                            let _ = try? FileManager.default.removeItem(atPath: databasePath)
+                            preconditionFailure()
+                        }),
+                    ]), ActionSheetItemGroup(items: [
+                        ActionSheetButtonItem(title: presentationData.strings.Common_Cancel, color: .accent, action: { [weak actionSheet] in
+                            actionSheet?.dismissAnimated()
+                        })
+                    ])])
+                    arguments.presentController(actionSheet, nil)
+                })
+            case let .resetHoles(theme):
+                return ItemListActionItem(theme: theme, title: "Reset Holes", kind: .destructive, alignment: .natural, sectionId: self.section, style: .blocks, action: {
+                    guard let context = arguments.context else {
+                        return
+                    }
+                    let presentationData = arguments.sharedContext.currentPresentationData.with { $0 }
+                    let controller = OverlayStatusController(theme: presentationData.theme, strings: presentationData.strings, type: .loading(cancelled: nil))
+                    arguments.presentController(controller, nil)
+                    let _ = (context.account.postbox.transaction { transaction -> Void in
+                        transaction.addHolesEverywhere(peerNamespaces: [Namespaces.Peer.CloudUser, Namespaces.Peer.CloudGroup, Namespaces.Peer.CloudChannel], holeNamespace: Namespaces.Message.Cloud)
+                    }
+                    |> deliverOnMainQueue).start(completed: {
+                        controller.dismiss()
+                    })
+                })
             case let .resetBiometricsData(theme):
                 return ItemListActionItem(theme: theme, title: "Reset Biometrics Data", kind: .destructive, alignment: .natural, sectionId: self.section, style: .blocks, action: {
                     let _ = updatePresentationPasscodeSettingsInteractively(accountManager: arguments.sharedContext.accountManager, { settings in
                         return settings.withUpdatedBiometricsDomainState(nil).withUpdatedShareBiometricsDomainState(nil)
                     }).start()
+                })
+            case let .optimizeDatabase(theme):
+                return ItemListActionItem(theme: theme, title: "Optimize Database", kind: .generic, alignment: .natural, sectionId: self.section, style: .blocks, action: {
+                    guard let context = arguments.context else {
+                        return
+                    }
+                    let presentationData = arguments.sharedContext.currentPresentationData.with { $0 }
+                    let controller = OverlayStatusController(theme: presentationData.theme, strings: presentationData.strings, type: .loading(cancelled: nil))
+                    arguments.presentController(controller, nil)
+                    let _ = (context.account.postbox.optimizeStorage()
+                    |> deliverOnMainQueue).start(completed: {
+                        controller.dismiss()
+                        
+                        let controller = OverlayStatusController(theme: presentationData.theme, strings: presentationData.strings, type: .success)
+                        arguments.presentController(controller, nil)
+                    })
                 })
             case let .animatedStickers(theme):
                 return ItemListSwitchItem(theme: theme, title: "AJSON", value: GlobalExperimentalSettings.animatedStickers, sectionId: self.section, style: .blocks, updated: { value in
@@ -423,6 +488,14 @@ private enum DebugControllerEntry: ItemListNodeEntry {
                             return settings
                         })
                     }).start()
+                })
+            case let .alternateIcon(theme):
+                return ItemListActionItem(theme: theme, title: "Change Icon", kind: .generic, alignment: .natural, sectionId: self.section, style: .blocks, action: {
+                    if arguments.sharedContext.applicationBindings.getAlternateIconName() == "Black" {
+                        arguments.sharedContext.applicationBindings.requestSetAlternateIconName(nil, { _ in })
+                    } else {
+                        arguments.sharedContext.applicationBindings.requestSetAlternateIconName("Black", { _ in })
+                    }
                 })
             case let .versionInfo(theme):
                 let bundle = Bundle.main
@@ -460,7 +533,11 @@ private func debugControllerEntries(presentationData: PresentationData, loggingS
         entries.append(.reimport(presentationData.theme))
     }
     entries.append(.resetData(presentationData.theme))
+    entries.append(.resetDatabase(presentationData.theme))
+    entries.append(.resetHoles(presentationData.theme))
+    entries.append(.optimizeDatabase(presentationData.theme))
     entries.append(.photoPreview(presentationData.theme, experimentalSettings.chatListPhotos))
+    entries.append(.alternateIcon(presentationData.theme))
     entries.append(.versionInfo(presentationData.theme))
     
     return entries

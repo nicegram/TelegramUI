@@ -6,7 +6,6 @@ import Display
 
 private struct EmojisChatInputContextPanelEntryStableId: Hashable, Equatable {
     let symbol: String
-    let text: String
 }
 
 private struct EmojisChatInputContextPanelEntry: Comparable, Identifiable {
@@ -16,7 +15,7 @@ private struct EmojisChatInputContextPanelEntry: Comparable, Identifiable {
     let text: String
     
     var stableId: EmojisChatInputContextPanelEntryStableId {
-        return EmojisChatInputContextPanelEntryStableId(symbol: self.symbol, text: self.text)
+        return EmojisChatInputContextPanelEntryStableId(symbol: self.symbol)
     }
     
     func withUpdatedTheme(_ theme: PresentationTheme) -> EmojisChatInputContextPanelEntry {
@@ -81,7 +80,7 @@ final class EmojisChatInputContextPanelNode: ChatInputContextPanelNode {
         var index = 0
         var stableIds = Set<EmojisChatInputContextPanelEntryStableId>()
         for (symbol, text) in results {
-            let entry = EmojisChatInputContextPanelEntry(index: index, theme: self.theme, symbol: symbol, text: text)
+            let entry = EmojisChatInputContextPanelEntry(index: index, theme: self.theme, symbol: symbol.normalizedEmoji, text: text)
             if stableIds.contains(entry.stableId) {
                 continue
             }

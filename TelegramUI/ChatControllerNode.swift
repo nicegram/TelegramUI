@@ -299,7 +299,9 @@ class ChatControllerNode: ASDisplayNode, UIScrollViewDelegate {
                     
                     var messages: [EnqueueMessage] = []
                     
-                    for text in breakChatInputText(trimChatInputText(effectivePresentationInterfaceState.interfaceState.composeInputState.inputText)) {
+                    let inputText = convertMarkdownToAttributes(effectivePresentationInterfaceState.interfaceState.composeInputState.inputText)
+                    
+                    for text in breakChatInputText(trimChatInputText(inputText)) {
                         if text.length != 0 {
                             var attributes: [MessageAttribute] = []
                             let entities = generateTextEntities(text.string, enabledTypes: .all, currentEntities: generateChatInputTextEntities(text))
@@ -1381,7 +1383,11 @@ class ChatControllerNode: ASDisplayNode, UIScrollViewDelegate {
             if let peer = chatPresentationInterfaceState.renderedPeer?.peer, let restrictionTextValue = peer.restrictionText, !restrictionTextValue.isEmpty {
                 restrictionText = restrictionTextValue
             } else if chatPresentationInterfaceState.isNotAccessible {
-                restrictionText = chatPresentationInterfaceState.strings.Channel_ErrorAccessDenied
+                if let peer = chatPresentationInterfaceState.renderedPeer?.peer as? TelegramChannel, case .broadcast = peer.info {
+                    restrictionText = chatPresentationInterfaceState.strings.Channel_ErrorAccessDenied
+                } else {
+                    restrictionText = chatPresentationInterfaceState.strings.Group_ErrorAccessDenied
+                }
             }
             
             if (restrictionText != chatPresentationInterfaceState.strings.Channel_ErrorAccessDenied) {

@@ -1574,7 +1574,7 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
         }
         let postbox = self.context.account.postbox
         self.chatListDisplayNode.chatListNode.setCurrentRemovingPeerId(peerIds[0])
-        let _ = (ApplicationSpecificNotice.incrementArchiveChatTipsTips(accountManager: self.context.sharedContext.accountManager, count: 1)
+        let _ = (ApplicationSpecificNotice.incrementArchiveChatTips(accountManager: self.context.sharedContext.accountManager, count: 1)
         |> deliverOnMainQueue).start(next: { [weak self] previousHintCount in
             let _ = (postbox.transaction { transaction -> Void in
                 for peerId in peerIds {
@@ -1695,6 +1695,9 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
             }
             if shouldCommit {
                 strongSelf.chatListDisplayNode.chatListNode.setCurrentRemovingPeerId(peerId)
+                if let channel = chatPeer as? TelegramChannel {
+                    strongSelf.context.peerChannelMemberCategoriesContextsManager.externallyRemoved(peerId: channel.id, memberId: strongSelf.context.account.peerId)
+                }
                 let _ = removePeerChat(account: strongSelf.context.account, peerId: peerId, reportChatSpam: false, deleteGloballyIfPossible: deleteGloballyIfPossible).start(completed: {
                     guard let strongSelf = self else {
                         return

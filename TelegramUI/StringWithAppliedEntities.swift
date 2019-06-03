@@ -21,7 +21,7 @@ func chatInputStateStringWithAppliedEntities(_ text: String, entities: [MessageT
             range.length = stringLength - range.location
         }
         switch entity.type {
-            case .Url, .Email, .PhoneNumber, .TextUrl, .Mention, .Hashtag, .BotCommand:
+            case .Url, .Email, .PhoneNumber, .Mention, .Hashtag, .BotCommand:
                 break
             case .Bold:
                 string.addAttribute(ChatTextInputAttributes.bold, value: true as NSNumber, range: range)
@@ -29,6 +29,8 @@ func chatInputStateStringWithAppliedEntities(_ text: String, entities: [MessageT
                 string.addAttribute(ChatTextInputAttributes.italic, value: true as NSNumber, range: range)
             case let .TextMention(peerId):
                 string.addAttribute(ChatTextInputAttributes.textMention, value: ChatTextInputTextMentionAttribute(peerId: peerId), range: range)
+            case let .TextUrl(url):
+                string.addAttribute(ChatTextInputAttributes.textUrl, value: ChatTextInputTextUrlAttribute(url: url), range: range)
             case .Code, .Pre:
                 string.addAttribute(ChatTextInputAttributes.monospace, value: true as NSNumber, range: range)
             default:
@@ -38,7 +40,7 @@ func chatInputStateStringWithAppliedEntities(_ text: String, entities: [MessageT
     return string
 }
 
-func stringWithAppliedEntities(_ text: String, entities: [MessageTextEntity], baseColor: UIColor, linkColor: UIColor, baseFont: UIFont, linkFont: UIFont, boldFont: UIFont, italicFont: UIFont, fixedFont: UIFont, underlineLinks: Bool = true) -> NSAttributedString {
+func stringWithAppliedEntities(_ text: String, entities: [MessageTextEntity], baseColor: UIColor, linkColor: UIColor, baseFont: UIFont, linkFont: UIFont, boldFont: UIFont, italicFont: UIFont, fixedFont: UIFont, underlineLinks: Bool = true, external: Bool = false) -> NSAttributedString {
     var nsString: NSString?
     let string = NSMutableAttributedString(string: text, attributes: [NSAttributedStringKey.font: baseFont, NSAttributedStringKey.foregroundColor: baseColor])
     var skipEntity = false
@@ -97,7 +99,11 @@ func stringWithAppliedEntities(_ text: String, entities: [MessageTextEntity], ba
                 if underlineLinks && underlineAllLinks {
                     string.addAttribute(NSAttributedStringKey.underlineStyle, value: NSUnderlineStyle.styleSingle.rawValue as NSNumber, range: range)
                 }
-                string.addAttribute(NSAttributedStringKey(rawValue: TelegramTextAttributes.URL), value: url, range: range)
+                if external {
+                    string.addAttribute(NSAttributedStringKey.link, value: url, range: range)
+                } else {
+                    string.addAttribute(NSAttributedStringKey(rawValue: TelegramTextAttributes.URL), value: url, range: range)
+                }
             case .Bold:
                 string.addAttribute(NSAttributedStringKey.font, value: boldFont, range: range)
             case .Italic:

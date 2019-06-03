@@ -61,6 +61,7 @@ final class ChatRecentActionsController: TelegramController {
         }, openCalendarSearch: {
         }, toggleMembersSearch: { _ in
         }, navigateToMessage: { _ in
+        }, navigateToChat: { _ in
         }, openPeerInfo: {
         }, togglePeerNotifications: {
         }, sendContextResult: { _, _ in
@@ -98,10 +99,10 @@ final class ChatRecentActionsController: TelegramController {
         }, requestStopPollInMessage: { _ in
         }, updateInputLanguage: { _ in
         }, unarchiveChat: {
+        }, openLinkEditing: { 
         }, statuses: nil,
            gotoPin: {
         }, dismissInput: {
-        }, askUrlEntity: {
         })
         
         self.navigationItem.titleView = self.titleView

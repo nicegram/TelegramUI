@@ -52,6 +52,11 @@ private let auth = PresentationThemeAuth(
     introDotColor: UIColor(rgb: 0x5e5e5e)
 )
 
+private let passcode = PresentationThemePasscode(
+    backgroundColors: (UIColor(rgb: 0x000000), UIColor(rgb: 0x000000)),
+    buttonColor: UIColor(rgb: 0x1c1c1d)
+)
+
 private let rootController = PresentationThemeRootController(
     statusBar: rootStatusBar,
     tabBar: rootTabBar,
@@ -156,10 +161,12 @@ private let bubble = PresentationThemeChatBubble(
     incomingSecondaryTextColor: UIColor(rgb: 0xffffff, alpha: 0.5),
     incomingLinkTextColor: accentColor,
     incomingLinkHighlightColor: accentColor.withAlphaComponent(0.5),
+    incomingScamColor: destructiveColor,
     outgoingPrimaryTextColor: UIColor(rgb: 0xffffff),
     outgoingSecondaryTextColor: UIColor(rgb: 0xffffff, alpha: 0.5),
     outgoingLinkTextColor: accentColor,
     outgoingLinkHighlightColor: accentColor.withAlphaComponent(0.5),
+    outgoingScamColor: destructiveColor,
     infoPrimaryTextColor: UIColor(rgb: 0xffffff),
     infoLinkTextColor: accentColor,
     incomingTextHighlightColor: UIColor(rgb: 0xffe438),
@@ -207,7 +214,7 @@ private let bubble = PresentationThemeChatBubble(
 )
 
 private let serviceMessage = PresentationThemeServiceMessage(
-    components: PresentationThemeServiceMessageColor(withDefaultWallpaper: PresentationThemeServiceMessageColorComponents(fill: UIColor(rgb: 0x1f1f1f, alpha: 1.0), primaryText: UIColor(rgb: 0xffffff), linkHighlight: UIColor(rgb: 0xffffff, alpha: 0.12), dateFillStatic: UIColor(rgb: 0x1f1f1f, alpha: 1.0), dateFillFloating: UIColor(rgb: 0xffffff, alpha: 0.2)), withCustomWallpaper: PresentationThemeServiceMessageColorComponents(fill: UIColor(rgb: 0x1f1f1f, alpha: 1.0), primaryText: .white, linkHighlight: UIColor(rgb: 0xffffff, alpha: 0.12), dateFillStatic: UIColor(rgb: 0x1f1f1f, alpha: 1.0), dateFillFloating: UIColor(rgb: 0xffffff, alpha: 0.2))),
+    components: PresentationThemeServiceMessageColor(withDefaultWallpaper: PresentationThemeServiceMessageColorComponents(fill: UIColor(rgb: 0x1f1f1f, alpha: 1.0), primaryText: UIColor(rgb: 0xffffff), linkHighlight: UIColor(rgb: 0xffffff, alpha: 0.12), scam: destructiveColor, dateFillStatic: UIColor(rgb: 0x1f1f1f, alpha: 1.0), dateFillFloating: UIColor(rgb: 0xffffff, alpha: 0.2)), withCustomWallpaper: PresentationThemeServiceMessageColorComponents(fill: UIColor(rgb: 0x1f1f1f, alpha: 1.0), primaryText: .white, linkHighlight: UIColor(rgb: 0xffffff, alpha: 0.12), scam: destructiveColor, dateFillStatic: UIColor(rgb: 0x1f1f1f, alpha: 1.0), dateFillFloating: UIColor(rgb: 0xffffff, alpha: 0.2))),
     unreadBarFillColor: UIColor(rgb: 0x1b1b1b), //!!!
     unreadBarStrokeColor: UIColor(rgb: 0x000000),
     unreadBarTextColor: UIColor(rgb: 0xb2b2b2), //!!!
@@ -301,6 +308,8 @@ private let actionSheet = PresentationThemeActionSheet(
     secondaryTextColor: UIColor(rgb: 0x5e5e5e), //!!!
     controlAccentColor: accentColor,
     inputBackgroundColor: UIColor(rgb: 0x545454), //!!!
+    inputHollowBackgroundColor: UIColor(rgb: 0x545454),
+    inputBorderColor: UIColor(rgb: 0x545454),
     inputPlaceholderColor: UIColor(rgb: 0xaaaaaa), //!!!
     inputTextColor: .white,
     inputClearButtonColor: UIColor(rgb: 0xaaaaaa),
@@ -326,6 +335,7 @@ let defaultDarkPresentationTheme = PresentationTheme(
     overallDarkAppearance: true,
     allowsCustomWallpapers: false,
     auth: auth,
+    passcode: passcode,
     rootController: rootController,
     list: list,
     chatList: chatList,

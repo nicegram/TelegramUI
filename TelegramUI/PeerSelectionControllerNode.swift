@@ -246,7 +246,7 @@ final class PeerSelectionControllerNode: ASDisplayNode {
             self.searchDisplayController = SearchDisplayController(presentationData: self.presentationData, contentNode: ContactsSearchContainerNode(context: self.context, onlyWriteable: true, categories: [.cloudContacts, .global], openPeer: { [weak self] peer in
                 if let strongSelf = self {
                     switch peer {
-                        case let .peer(peer, _):
+                        case let .peer(peer, _, _):
                             let _ = (strongSelf.context.account.postbox.transaction { transaction -> Peer? in
                                 return transaction.getPeer(peer.id)
                             } |> deliverOnMainQueue).start(next: { peer in
@@ -326,14 +326,14 @@ final class PeerSelectionControllerNode: ASDisplayNode {
                     self.recursivelyEnsureDisplaySynchronously(true)
                     contactListNode.enableUpdates = true
                 } else {
-                    let contactListNode = ContactListNode(context: context, presentation: .single(.natural(options: [])))
+                    let contactListNode = ContactListNode(context: context, presentation: .single(.natural(options: [], includeChatList: false)))
                     self.contactListNode = contactListNode
                     contactListNode.enableUpdates = true
                     contactListNode.activateSearch = { [weak self] in
                         self?.requestActivateSearch?()
                     }
                     contactListNode.openPeer = { [weak self] peer in
-                        if case let .peer(peer, _) = peer {
+                        if case let .peer(peer, _, _) = peer {
                             self?.requestOpenPeer?(peer.id)
                         }
                     }

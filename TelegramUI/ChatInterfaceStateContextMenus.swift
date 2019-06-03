@@ -402,12 +402,15 @@ func contextMenuForChatPresentationIntefaceState(chatPresentationInterfaceState:
                             break
                         }
                     }
-                    if false, let messageEntities = messageEntities {
-                        let attributedString = stringWithAppliedEntities(message.text, entities: messageEntities, baseColor: .black, linkColor: .black, baseFont: Font.regular(14.0), linkFont: Font.regular(14.0), boldFont: Font.bold(14.0), italicFont: Font.italic(14.0), fixedFont: Font.monospace(14.0))
-                        UIPasteboard.general.set(attributedString: attributedString)
-                    } else {
-                        UIPasteboard.general.string = message.text
-                    }
+                    storeMessageTextInPasteboard(message.text, entities: messageEntities)
+//                    if let messageEntities = messageEntities {
+//
+//                        let attributedString = chatInputStateStringWithAppliedEntities(message.text, entities: messageEntities)
+//                            //stringWithAppliedEntities(message.text, entities: messageEntities, baseColor: .black, linkColor: .black, baseFont: Font.regular(14.0), linkFont: Font.regular(14.0), boldFont: Font.bold(14.0), italicFont: Font.italic(14.0), fixedFont: Font.monospace(14.0))
+//                        UIPasteboard.general.set(attributedString: attributedString)
+//                    } else {
+//                        UIPasteboard.general.string = message.text
+//                    }
                 }
             })))
         }
@@ -489,7 +492,7 @@ func contextMenuForChatPresentationIntefaceState(chatPresentationInterfaceState:
                         
                         let presentationData = context.sharedContext.currentPresentationData.with { $0 }
                         if channel.addressName == nil {
-                            controllerInteraction.presentController(OverlayStatusController(theme: presentationData.theme, strings: presentationData.strings, type: .genericSuccess(presentationData.strings.Conversation_PrivateMessageLinkCopied, false)), nil)
+                            controllerInteraction.presentController(OverlayStatusController(theme: presentationData.theme, strings: presentationData.strings, type: .genericSuccess(presentationData.strings.Conversation_PrivateMessageLinkCopied, true)), nil)
                         } else {
                             controllerInteraction.presentController(OverlayStatusController(theme: presentationData.theme, strings: presentationData.strings, type: .genericSuccess(presentationData.strings.GroupInfo_InviteLink_CopyAlert_Success, false)), nil)
                         }
@@ -718,10 +721,15 @@ func chatAvailableMessageActions(postbox: Postbox, accountPeerId: PeerId, messag
                         }
                         if channel.hasPermission(.banMembers), case .group = channel.info {
                             if message.flags.contains(.Incoming) {
-                                if !hadBanPeerId {
+                                if message.author is TelegramUser {
+                                    if !hadBanPeerId {
+                                        hadBanPeerId = true
+                                        banPeer = message.author
+                                    } else if banPeer?.id != message.author?.id {
+                                        banPeer = nil
+                                    }
+                                } else {
                                     hadBanPeerId = true
-                                    banPeer = message.author
-                                } else if banPeer?.id != message.author?.id {
                                     banPeer = nil
                                 }
                             } else {

@@ -205,7 +205,7 @@ private func universalServiceMessageString(theme: ChatPresentationThemeData?, st
                             }
                             attributedString = addAttributesToStringWithRanges(textWithRanges, body: bodyAttributes, argumentAttributes: peerMentionsAttributes(primaryTextColor: primaryTextColor, peerIds: [(0, message.author?.id)]))
                         case .game:
-                            attributedString = addAttributesToStringWithRanges(strings.PUSH_PINNED_GAME(authorName), body: bodyAttributes, argumentAttributes: peerMentionsAttributes(primaryTextColor: primaryTextColor, peerIds: [(0, message.author?.id)]))
+                            attributedString = addAttributesToStringWithRanges(strings.Message_AuthorPinnedGame(authorName), body: bodyAttributes, argumentAttributes: peerMentionsAttributes(primaryTextColor: primaryTextColor, peerIds: [(0, message.author?.id)]))
                         case .photo:
                             attributedString = addAttributesToStringWithRanges(strings.Notification_PinnedPhotoMessage(authorName), body: bodyAttributes, argumentAttributes: peerMentionsAttributes(primaryTextColor: primaryTextColor, peerIds: [(0, message.author?.id)]))
                         case .video:
@@ -417,6 +417,8 @@ private func universalServiceMessageString(theme: ChatPresentationThemeData?, st
                     attributedString = NSAttributedString(string: strings.Notification_PassportValuesSentMessage(message.peers[message.id.peerId]?.compactDisplayTitle ?? "", typesString).0, font: titleFont, textColor: primaryTextColor)
                 case .peerJoined:
                     attributedString = addAttributesToStringWithRanges(strings.Notification_Joined(authorName), body: bodyAttributes, argumentAttributes: peerMentionsAttributes(primaryTextColor: primaryTextColor, peerIds: [(0, message.author?.id)]))
+                case .phoneNumberRequest:
+                    attributedString = nil
                 case .unknown:
                     attributedString = nil
             }
