@@ -64,6 +64,14 @@ public class ChatListController: TelegramController, KeyShortcutResponder, UIVie
     
     public func presentTabBarPreviewingController(sourceNodes: [ASDisplayNode]) {
         if (self.filter == nil) {
+            if self.chatListDisplayNode.searchDisplayController != nil {
+                self.deactivateSearch(animated: true)
+            } else {
+                if let searchContentNode = self.searchContentNode {
+                    searchContentNode.updateExpansionProgress(1.0, animated: true)
+                }
+                self.chatListDisplayNode.chatListNode.scrollToPosition(.auto)
+            }
             return
         }
         
