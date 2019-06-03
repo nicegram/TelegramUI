@@ -360,6 +360,7 @@ class ChatListItemNode: ItemListRevealOptionsItemNode {
                         } else {
                             result += "Outgoing message"
                         }
+                        // Possible accessibility improvement
                         let (_, initialHideAuthor, messageText) = chatListItemStrings(strings: item.presentationData.strings, nameDisplayOrder: item.presentationData.nameDisplayOrder, message: peer.message, chatPeer: peer.peer, accountPeerId: item.context.account.peerId)
                         if message.flags.contains(.Incoming), !initialHideAuthor, let author = message.author, author is TelegramUser {
                             result += "\nFrom: \(author.displayTitle(strings: item.presentationData.strings, displayOrder: item.presentationData.nameDisplayOrder))"
