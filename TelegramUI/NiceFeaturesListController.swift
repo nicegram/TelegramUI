@@ -269,8 +269,8 @@ private func niceFeaturesControllerEntries(niceSettings: NiceSettings, presentat
     
     entries.append(.tabsHeader(presentationData.theme, l(key: "NiceFeatures.Tabs.Header", locale: presentationData.strings.baseLanguageCode)))
     entries.append(.showContactsTab(presentationData.theme, l(key: "NiceFeatures.Tabs.ShowContacts", locale: presentationData.strings.baseLanguageCode), niceSettings.showContactsTab))
-    entries.append(.chatScreenHeader(presentationData.theme, l(key: "NiceFeatures.ChatScreen.Header", locale: presentationData.strings.baseLanguageCode)))
-    entries.append(.animatedStickers(presentationData.theme, l(key:  "NiceFeatures.ChatScreen.AnimatedStickers", locale: presentationData.strings.baseLanguageCode), GlobalExperimentalSettings.animatedStickers))
+    //entries.append(.chatScreenHeader(presentationData.theme, l(key: "NiceFeatures.ChatScreen.Header", locale: presentationData.strings.baseLanguageCode)))
+    //entries.append(.animatedStickers(presentationData.theme, l(key:  "NiceFeatures.ChatScreen.AnimatedStickers", locale: presentationData.strings.baseLanguageCode), GlobalExperimentalSettings.animatedStickers))
     // entries.append(.transparentEmojisBubble(presentationData.theme, "Transparent Emojis Bubble", niceSettings.transparentEmojisBubble))
     // entries.append(.transparentEmojisBubbleNotice(presentationData.theme, "Looks like emojis in iMessage. Removes bubble for emoji-only messages."))
     
