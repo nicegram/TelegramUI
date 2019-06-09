@@ -735,7 +735,13 @@ public final class SharedAccountContext {
                         }
                         let encrypt: Bool
                         if #available(iOS 10.0, *) {
-                            encrypt = false
+                            let niceSettingsManager = NiceSettingsManager()
+                            let niceSettings = niceSettingsManager.getSettings()
+                            if (niceSettings.fixNotifications) {
+                                encrypt = false
+                            } else {
+                                encrypt = true
+                            }
                         } else {
                             encrypt = false
                         }

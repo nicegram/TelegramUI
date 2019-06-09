@@ -15,11 +15,13 @@ import TelegramCore
 private final class NiceFeaturesControllerArguments {
     let togglePinnedMessage: (Bool) -> Void
     let toggleShowContactsTab: (Bool) -> Void
-
+    let toggleFixNotifications: (Bool) -> Void
     
-    init(togglePinnedMessage:@escaping (Bool) -> Void, toggleShowContactsTab:@escaping (Bool) -> Void) {
+    
+    init(togglePinnedMessage:@escaping (Bool) -> Void, toggleShowContactsTab:@escaping (Bool) -> Void, toggleFixNotifications:@escaping (Bool) -> Void) {
         self.togglePinnedMessage = togglePinnedMessage
         self.toggleShowContactsTab = toggleShowContactsTab
+        self.toggleFixNotifications = toggleFixNotifications
     }
 }
 
@@ -39,26 +41,25 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
     case messageNotificationsHeader(PresentationTheme, String)
     case pinnedMessageNotification(PresentationTheme, String, Bool)
     
+    case fixNotifications(PresentationTheme, String, Bool)
+    case fixNotificationsNotice(PresentationTheme, String)
+    
     case chatsListHeader(PresentationTheme, String)
-    case workmode(PresentationTheme, String, Bool)
-    case workmodeNotice(PresentationTheme, String)
     
     case tabsHeader(PresentationTheme, String)
     case showContactsTab(PresentationTheme, String, Bool)
     
     case chatScreenHeader(PresentationTheme, String)
     
-    case animatedStickers(PresentationTheme, String, Bool)
-    
     var section: ItemListSectionId {
         switch self {
-        case .messageNotificationsHeader, .pinnedMessageNotification:
+        case .messageNotificationsHeader, .pinnedMessageNotification, .fixNotifications, .fixNotificationsNotice:
             return niceFeaturesControllerSection.messageNotifications.rawValue
-        case .chatsListHeader, .workmode, .workmodeNotice:
+        case .chatsListHeader:
             return niceFeaturesControllerSection.chatsList.rawValue
         case .tabsHeader, .showContactsTab:
             return niceFeaturesControllerSection.tabs.rawValue
-        case .chatScreenHeader, .animatedStickers:
+        case .chatScreenHeader:
             return niceFeaturesControllerSection.chatScreen.rawValue
         }
         
@@ -70,11 +71,11 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
             return .index(0)
         case .pinnedMessageNotification:
             return .index(1)
-        case .chatsListHeader:
+        case .fixNotifications:
             return .index(2)
-        case .workmode:
+        case .fixNotificationsNotice:
             return .index(3)
-        case .workmodeNotice:
+        case .chatsListHeader:
             return .index(4)
         case .tabsHeader:
             return .index(5)
@@ -82,8 +83,6 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
             return .index(6)
         case .chatScreenHeader:
             return .index(7)
-        case .animatedStickers:
-            return .index(8)
         }
     }
     
@@ -103,22 +102,22 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
                 return false
             }
             
+        case let .fixNotifications(lhsTheme, lhsText, lhsValue):
+            if case let .fixNotifications(rhsTheme, rhsText, rhsValue) = rhs, lhsTheme === rhsTheme, lhsText == rhsText, lhsValue == rhsValue {
+                return true
+            } else {
+                return false
+            }
+            
+        case let .fixNotificationsNotice(lhsTheme, lhsText):
+            if case let .fixNotificationsNotice(rhsTheme, rhsText) = rhs, lhsTheme === rhsTheme, lhsText == rhsText {
+                return true
+            } else {
+                return false
+            }
+            
         case let .chatsListHeader(lhsTheme, lhsText):
             if case let .chatsListHeader(rhsTheme, rhsText) = rhs, lhsTheme === rhsTheme, lhsText == rhsText {
-                return true
-            } else {
-                return false
-            }
-            
-        case let .workmode(lhsTheme, lhsText, lhsValue):
-            if case let .workmode(rhsTheme, rhsText, rhsValue) = rhs, lhsTheme === rhsTheme, lhsText == rhsText, lhsValue == rhsValue {
-                return true
-            } else {
-                return false
-            }
-            
-        case let .workmodeNotice(lhsTheme, lhsText):
-            if case let .workmodeNotice(rhsTheme, rhsText) = rhs, lhsTheme === rhsTheme, lhsText == rhsText {
                 return true
             } else {
                 return false
@@ -144,13 +143,6 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
             } else {
                 return false
             }
-            
-        case let .animatedStickers(lhsTheme, lhsText, lhsValue):
-            if case let .animatedStickers(rhsTheme, rhsText, rhsValue) = rhs, lhsTheme === rhsTheme, lhsText == rhsText, lhsValue == rhsValue {
-                return true
-            } else {
-                return false
-            }
         }
     }
     
@@ -170,49 +162,42 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
             default:
                 return true
             }
+        case .fixNotifications:
+            switch rhs {
+            case .messageNotificationsHeader, .pinnedMessageNotification, .fixNotifications:
+                return false
+            default:
+                return true
+            }
+        case .fixNotificationsNotice:
+            switch rhs {
+            case .messageNotificationsHeader, .pinnedMessageNotification, .fixNotifications, .fixNotificationsNotice:
+                return false
+            default:
+                return true
+            }
         case .chatsListHeader:
             switch rhs {
-            case .messageNotificationsHeader, .pinnedMessageNotification, .chatsListHeader:
-                return false
-            default:
-                return true
-            }
-        case .workmode:
-            switch rhs {
-            case .messageNotificationsHeader, .pinnedMessageNotification, .chatsListHeader, .workmode:
-                return false
-            default:
-                return true
-            }
-        case .workmodeNotice:
-            switch rhs {
-            case .messageNotificationsHeader, .pinnedMessageNotification, .chatsListHeader, .workmode, .workmodeNotice:
+            case .messageNotificationsHeader, .pinnedMessageNotification, .fixNotifications, .fixNotificationsNotice, .chatsListHeader:
                 return false
             default:
                 return true
             }
         case .tabsHeader:
             switch rhs {
-            case .messageNotificationsHeader, .pinnedMessageNotification, .chatsListHeader, .workmode, .workmodeNotice, .tabsHeader:
+            case .messageNotificationsHeader, .pinnedMessageNotification, .fixNotifications, .fixNotificationsNotice, .chatsListHeader, .tabsHeader:
                 return false
             default:
                 return true
             }
         case .showContactsTab:
             switch rhs {
-            case .messageNotificationsHeader, .pinnedMessageNotification, .chatsListHeader, .workmode, .workmodeNotice, .tabsHeader, .showContactsTab:
+            case .messageNotificationsHeader, .pinnedMessageNotification, .fixNotifications, .fixNotificationsNotice, .chatsListHeader, .tabsHeader, .showContactsTab:
                 return false
             default:
                 return true
             }
         case .chatScreenHeader:
-            switch rhs {
-            case .messageNotificationsHeader, .pinnedMessageNotification, .chatsListHeader, .workmode, .workmodeNotice, .tabsHeader, .showContactsTab, .chatScreenHeader:
-                return false
-            default:
-                return true
-            }
-        case animatedStickers:
             return false
         }
     }
@@ -225,14 +210,14 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
             return ItemListSwitchItem(theme: theme, title: text, value: value, enabled: true, sectionId: self.section, style: .blocks, updated: { value in
                 arguments.togglePinnedMessage(value)
             })
+        case let .fixNotifications(theme, text, value):
+            return ItemListSwitchItem(theme: theme, title: text, value: value, enabled: true, sectionId: self.section, style: .blocks, updated: { value in
+                arguments.toggleFixNotifications(value)
+            })
+        case let .fixNotificationsNotice(theme, text):
+            return ItemListTextItem(theme: theme, text: .plain(text), sectionId: self.section)
         case let .chatsListHeader(theme, text):
             return ItemListSectionHeaderItem(theme: theme, text: text, sectionId: self.section)
-        case let .workmode(theme, text, value):
-            return ItemListSwitchItem(theme: theme, title: text, value: value, enabled: true, sectionId: self.section, style: .blocks, updated: { value in
-                // arguments.toggleWorkmode(value)
-            })
-        case let .workmodeNotice(theme, text):
-            return ItemListTextItem(theme: theme, text: .plain(text), sectionId: self.section)
         case let .tabsHeader(theme, text):
             return ItemListSectionHeaderItem(theme: theme, text: text, sectionId: self.section)
         case let .showContactsTab(theme, text, value):
@@ -241,10 +226,6 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
             })
         case let .chatScreenHeader(theme, text):
             return ItemListSectionHeaderItem(theme: theme, text: text, sectionId: self.section)
-        case let .animatedStickers(theme, text, value):
-            return ItemListSwitchItem(theme: theme, title: text, value: value, enabled: true, sectionId: self.section, style: .blocks, updated: { value in
-                GlobalExperimentalSettings.animatedStickers = value
-            })
         }
     }
     
@@ -261,11 +242,11 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
 private func niceFeaturesControllerEntries(niceSettings: NiceSettings, presentationData: PresentationData) -> [NiceFeaturesControllerEntry] {
     var entries: [NiceFeaturesControllerEntry] = []
     
-    //entries.append(.messageNotificationsHeader(presentationData.theme, "MESSAGE NOTIFICATIONS"))  // presentationData.strings.Nicegram_Settings_Features_MessageNotifications))
+    entries.append(.messageNotificationsHeader(presentationData.theme, presentationData.strings.Notifications_Title))
     //entries.append(.pinnedMessageNotification(presentationData.theme, "Pinned Messages", niceSettings.pinnedMessagesNotification))  //presentationData.strings.Nicegram_Settings_Features_PinnedMessages
-    // entries.append(.chatsListHeader(presentationData.theme, "CHATS LIST"))
-    // entries.append(.workmode(presentationData.theme, "Workmode", niceSettings.workmode))
-    // entries.append(.workmodeNotice(presentationData.theme, "Switch between \"All\" and \"Non Muted\" chats"))
+    entries.append(.fixNotifications(presentationData.theme, l(key: "NiceFeatures.Notifications.Fix", locale: presentationData.strings.baseLanguageCode), niceSettings.fixNotifications))
+    entries.append(.fixNotificationsNotice(presentationData.theme, l(key: "NiceFeatures.Notifications.FixNotice", locale: presentationData.strings.baseLanguageCode)))
+    
     
     entries.append(.tabsHeader(presentationData.theme, l(key: "NiceFeatures.Tabs.Header", locale: presentationData.strings.baseLanguageCode)))
     entries.append(.showContactsTab(presentationData.theme, l(key: "NiceFeatures.Tabs.ShowContacts", locale: presentationData.strings.baseLanguageCode), niceSettings.showContactsTab))
@@ -298,6 +279,13 @@ public func niceFeaturesController(context: AccountContext) -> ViewController {
             settings.showContactsTab = value
             return settings
         }).start()
+    }, toggleFixNotifications: { value in
+        let _ = updateNiceSettingsInteractively(accountManager: context.sharedContext.accountManager, { settings in
+            var settings = settings
+            settings.fixNotifications = value
+            return settings
+        }).start()
+        context.sharedContext.updateNotificationTokensRegistration()
     }
     )
     
