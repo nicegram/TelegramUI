@@ -735,7 +735,7 @@ public final class SharedAccountContext {
                         }
                         let encrypt: Bool
                         if #available(iOS 10.0, *) {
-                            encrypt = true
+                            encrypt = false
                         } else {
                             encrypt = false
                         }
