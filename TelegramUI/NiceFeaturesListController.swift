@@ -242,7 +242,7 @@ private enum NiceFeaturesControllerEntry: ItemListNodeEntry {
 private func niceFeaturesControllerEntries(niceSettings: NiceSettings, presentationData: PresentationData) -> [NiceFeaturesControllerEntry] {
     var entries: [NiceFeaturesControllerEntry] = []
     
-    entries.append(.messageNotificationsHeader(presentationData.theme, presentationData.strings.Notifications_Title))
+    entries.append(.messageNotificationsHeader(presentationData.theme, presentationData.strings.Notifications_Title.uppercased()))
     //entries.append(.pinnedMessageNotification(presentationData.theme, "Pinned Messages", niceSettings.pinnedMessagesNotification))  //presentationData.strings.Nicegram_Settings_Features_PinnedMessages
     entries.append(.fixNotifications(presentationData.theme, l(key: "NiceFeatures.Notifications.Fix", locale: presentationData.strings.baseLanguageCode), niceSettings.fixNotifications))
     entries.append(.fixNotificationsNotice(presentationData.theme, l(key: "NiceFeatures.Notifications.FixNotice", locale: presentationData.strings.baseLanguageCode)))
