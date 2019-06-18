@@ -1027,12 +1027,23 @@ final class ChatListNode: ListView {
             }
             startedScrollingAtUpperBound = false
             let _ = strongSelf.contentScrollingEnded?(strongSelf)
+            let niceFolders = getNiceFolders(accountManager: strongSelf.context.sharedContext.accountManager)
+            let niceFoldersCount = niceFolders.folders.count
             let revealHiddenItems: Bool
             switch strongSelf.visibleContentOffset() {
                 case .none, .unknown:
-                    revealHiddenItems = false
+                    if niceFoldersCount != 0 {
+                        revealHiddenItems = true
+                    } else {
+                        revealHiddenItems = false
+                    }
                 case let .known(value):
-                    revealHiddenItems = value <= 54.0
+                    if niceFoldersCount != 0 {
+                        let testValue = 54.0 + 76.0 * CGFloat(niceFoldersCount)
+                        revealHiddenItems = value <= testValue
+                    } else {
+                        revealHiddenItems = value <= 54.0
+                    }
             }
             if !revealHiddenItems && strongSelf.currentState.archiveShouldBeTemporaryRevealed {
                 strongSelf.updateState { state in

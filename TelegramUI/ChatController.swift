@@ -3402,6 +3402,10 @@ public final class ChatController: TelegramController, KeyShortcutResponder, Gal
                     updatePeerGroupIdInteractively(transaction: transaction, peerId: peerId, groupId: .root)
                     }
                     |> deliverOnMainQueue).start()
+                let folder = getPeerFolder(accountManager: strongSelf.context.sharedContext.accountManager, peerId: peerId)
+                if folder != nil {
+                    removeNiceFolderItems(accountManager: strongSelf.context.sharedContext.accountManager, groupId: folder!.groupId, peerIds: [peerId])
+                }
             }, openLinkEditing: { [weak self] in
                 if let strongSelf = self {
                     var selectionRange: Range<Int>?

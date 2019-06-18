@@ -417,18 +417,19 @@ private enum DebugControllerEntry: ItemListNodeEntry {
                     arguments.presentController(actionSheet, nil)
                 })
             case let .resetDatabase(theme):
-                return ItemListActionItem(theme: theme, title: "Clear Database", kind: .destructive, alignment: .natural, sectionId: self.section, style: .blocks, action: {
+                return ItemListActionItem(theme: theme, title: "Clear Database & Folders", kind: .destructive, alignment: .natural, sectionId: self.section, style: .blocks, action: {
                     guard let context = arguments.context else {
                         return
                     }
                     let presentationData = arguments.sharedContext.currentPresentationData.with { $0 }
                     let actionSheet = ActionSheetController(presentationTheme: presentationData.theme)
                     actionSheet.setItemGroups([ActionSheetItemGroup(items: [
-                        ActionSheetTextItem(title: "All secret chats will be lost."),
+                        ActionSheetTextItem(title: "All secret chats & folders will be lost."),
                         ActionSheetButtonItem(title: "Clear Database", color: .destructive, action: { [weak actionSheet] in
                             actionSheet?.dismissAnimated()
                             let databasePath = context.account.basePath + "/postbox/db"
                             let _ = try? FileManager.default.removeItem(atPath: databasePath)
+                            resetNiceFolders(accountManager: context.sharedContext.accountManager)
                             preconditionFailure()
                         }),
                     ]), ActionSheetItemGroup(items: [

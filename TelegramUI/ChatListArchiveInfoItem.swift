@@ -240,6 +240,7 @@ class ChatListArchiveInfoItemNode: ListViewItemNode, UIScrollViewDelegate {
                     strongSelf.pageControlNode.frame = CGRect(origin: CGPoint(x: floor((params.width - pageControlSize.width) / 2.0), y: layout.contentSize.height - bottomInset - pageControlSize.height), size: pageControlSize)
                     
                     if strongSelf.headerNode == nil {
+                        // FOLDER TITLE?
                         let headerNode = ListSectionHeaderNode(theme: item.theme)
                         headerNode.title = item.strings.ChatList_ArchivedChatsTitle.uppercased()
                         strongSelf.addSubnode(headerNode)

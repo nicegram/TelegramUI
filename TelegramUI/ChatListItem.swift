@@ -333,6 +333,7 @@ class ChatListItemNode: ItemListRevealOptionsItemNode {
             }
             switch item.content {
                 case .groupReference:
+                    // TODO: Possible accessibility improvement
                     return nil
                 case let .peer(peer):
                     guard let chatMainPeer = peer.peer.chatMainPeer else {
@@ -351,6 +352,7 @@ class ChatListItemNode: ItemListRevealOptionsItemNode {
             }
             switch item.content {
                 case .groupReference:
+                    // TODO: Possible accessibility improvement
                     return nil
                 case let .peer(peer):
                     if let message = peer.message {
@@ -470,7 +472,12 @@ class ChatListItemNode: ItemListRevealOptionsItemNode {
                     UIView.transition(with: self.avatarNode.view, duration: 0.3, options: [.transitionCrossDissolve], animations: {
                     }, completion: nil)
                 }
-                self.avatarNode.setPeer(account: item.context.account, theme: item.presentationData.theme, peer: peer, overrideImage: .archivedChatsIcon(hiddenByDefault: groupReference.hiddenByDefault), emptyColor: item.presentationData.theme.list.mediaPlaceholderColor, synchronousLoad: synchronousLoads)
+                if isNiceFolderCheck(groupId: groupReference.groupId) {
+                    // TODO: Folder Icon
+                    self.avatarNode.setPeer(account: item.context.account, theme: item.presentationData.theme, peer: peer, overrideImage: .archivedChatsIcon(hiddenByDefault: groupReference.hiddenByDefault), emptyColor: nil, synchronousLoad: synchronousLoads)
+                } else {
+                    self.avatarNode.setPeer(account: item.context.account, theme: item.presentationData.theme, peer: peer, overrideImage: .archivedChatsIcon(hiddenByDefault: groupReference.hiddenByDefault), emptyColor: item.presentationData.theme.list.mediaPlaceholderColor, synchronousLoad: synchronousLoads)
+            }
         }
         
         if let peer = peer {
@@ -591,6 +598,8 @@ class ChatListItemNode: ItemListRevealOptionsItemNode {
             
             var groupHiddenByDefault = false
             
+            var isNiceFolder = false
+            
             switch item.content {
                 case let .peer(messageValue, peerValue, combinedReadStateValue, notificationSettingsValue, peerPresenceValue, summaryInfoValue, embeddedStateValue, inputActivitiesValue, isAdValue, ignoreUnreadBadge):
                     message = messageValue
@@ -612,7 +621,7 @@ class ChatListItemNode: ItemListRevealOptionsItemNode {
                     inputActivities = inputActivitiesValue
                     isPeerGroup = false
                     isAd = isAdValue
-                case let .groupReference(_, peers, messageValue, unreadState, hiddenByDefault):
+                case let .groupReference(groupId, peers, messageValue, unreadState, hiddenByDefault):
                     if let messageValue = messageValue, !peers.isEmpty {
                         contentPeer = .chat(peers[0].peer)
                     } else {
@@ -625,6 +634,9 @@ class ChatListItemNode: ItemListRevealOptionsItemNode {
                     summaryInfo = ChatListMessageTagSummaryInfo()
                     inputActivities = nil
                     isPeerGroup = true
+                    if isNiceFolderCheck(groupId: groupId) {
+                        isNiceFolder = true
+                    }
                     groupHiddenByDefault = hiddenByDefault
                     let allCount = unreadState.count(countingCategory: .chats, mutedCategory: .all)
                     unreadCount = (allCount, allCount != 0, true, nil)
@@ -821,14 +833,50 @@ class ChatListItemNode: ItemListRevealOptionsItemNode {
             switch contentData {
                 case let .chat(_, peer, _, _):
                     if isPeerGroup {
-                        titleAttributedString = NSAttributedString(string: item.presentationData.strings.ChatList_ArchivedChatsTitle, font: titleFont, textColor: theme.titleColor)
+                        // FOLDER TITLE
+                        var title = item.presentationData.strings.ChatList_ArchivedChatsTitle
+                        switch item.content {
+                            case let .groupReference(groupId, _, _, _, _):
+                                if isNiceFolder {
+                                    let niceFolder = getNiceFolder(accountManager: item.context.sharedContext.accountManager, groupId: groupId)
+                                    if niceFolder != nil {
+                                        if let name = niceFolder?.name {
+                                            title = name
+                                        } else {
+                                            title = l(key: "Folder.DefaultName", locale: item.presentationData.strings.baseLanguageCode)
+                                        }
+                                    }
+                                }
+                            default:
+                                break
+                        }
+                        //
+                        titleAttributedString = NSAttributedString(string: title, font: titleFont, textColor: theme.titleColor)
                     } else if peer?.id == item.context.account.peerId {
                         titleAttributedString = NSAttributedString(string: item.presentationData.strings.DialogList_SavedMessages, font: titleFont, textColor: theme.titleColor)
                     } else if let displayTitle = peer?.displayTitle(strings: item.presentationData.strings, displayOrder: item.presentationData.nameDisplayOrder) {
                         titleAttributedString = NSAttributedString(string: displayTitle, font: titleFont, textColor: item.index.messageIndex.id.peerId.namespace == Namespaces.Peer.SecretChat ? theme.secretTitleColor : theme.titleColor)
                     }
                 case .group:
-                    titleAttributedString = NSAttributedString(string: item.presentationData.strings.ChatList_ArchivedChatsTitle, font: titleFont, textColor: theme.titleColor)
+                    // FOLDER TITLE
+                    var title = item.presentationData.strings.ChatList_ArchivedChatsTitle
+                    switch item.content {
+                        case let .groupReference(groupId, _, _, _, _):
+                            if isNiceFolder {
+                                let niceFolder = getNiceFolder(accountManager: item.context.sharedContext.accountManager, groupId: groupId)
+                                if niceFolder != nil {
+                                    if let name = niceFolder?.name {
+                                        title = name
+                                    } else {
+                                        title = l(key: "Folder.DefaultName", locale: item.presentationData.strings.baseLanguageCode)
+                                    }
+                                }
+                            }
+                        default:
+                            break
+                    }
+                    //
+                    titleAttributedString = NSAttributedString(string: title, font: titleFont, textColor: theme.titleColor)
             }
             
             textAttributedString = attributedText
@@ -878,7 +926,7 @@ class ChatListItemNode: ItemListRevealOptionsItemNode {
                     let unreadCountText = compactNumericCountString(Int(unreadCount.count), decimalSeparator: item.presentationData.dateTimeFormat.decimalSeparator)
                     if unreadCount.count > 0 {
                         badgeContent = .text(NSAttributedString(string: unreadCountText, font: badgeFont, textColor: badgeTextColor))
-                    } else if isPeerGroup {
+                    } else if isPeerGroup && !isNiceFolder {
                         badgeContent = .none
                     } else {
                         badgeContent = .blank

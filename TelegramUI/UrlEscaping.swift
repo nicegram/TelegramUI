@@ -9,7 +9,9 @@ func doesUrlMatchText(url: String, text: String) -> Bool {
 
 private let whitelistedHosts: Set<String> = Set([
     "t.me",
-    "telegram.me"
+    "telegram.me",
+    "nicegram.app",
+    "nicegram.github.io"
 ])
 
 func isConcealedUrlWhitelisted(_ url: URL) -> Bool {
@@ -32,7 +34,7 @@ extension CharacterSet {
 }
 
 func isValidUrl(_ url: String) -> Bool {
-    if let url = URL(string: url), ["http", "https"].contains(url.scheme), let host = url.host, host.contains(".") && url.user == nil {
+    if let url = URL(string: url), ["http", "https", "tg", "ng"].contains(url.scheme), let host = url.host, host.contains(".") && url.user == nil {
         let components = host.components(separatedBy: ".")
         let domain = (components.first ?? "")
         if domain.isEmpty {
